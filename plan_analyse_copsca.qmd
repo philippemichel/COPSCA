@@ -1,0 +1,157 @@
+---
+title: "CopSCA"
+subtitle: "Plan d'analyse statistique"
+author: 
+    - name: "Dr Philippe MICHEL"
+      affiliations:
+        name: "Hôpital NOVO"
+        department: "Unité de Soutien à la Recherche Clinique"
+lang: fr-FR
+date: today
+date-format: "DD/MM/YYYY"
+format: 
+  titlepage-pdf:
+    titlepage: bg-image
+    titlepage-bg-image: "novo_usrc.png"
+    logo-space-after: "0\\baselineskip"
+    documentclass: scrreprt
+    classoption: ["oneside", "open=any"]
+    number-sections: true
+    titlepage-footer: "- **Marion DUPAIN**  -- SAMU 95 -- Hôpital NOVO (Site Pontoise)\\newline - **Dr Olivier ANCELLI** -- SAMU 95 -- Hôpital NOVO (Site Pontoise)\\newline \\newline Place du dosage copeptine/troponine dans le diagnostic d’élimination des SCA non ST+ dans la prise en charge des douleur thoraciques non traumatiques en pré et intra hospitalier chez l’adulte. \\newline \\raggedleft{\\today}"
+titlepage-theme:
+    title-fontstyle: ["Huge", "bfseries"]
+    title-color: novo
+    subtitle-color: novo
+    subtitle-fontstyle: ["huge"]
+    logo-size: "0.2\\textheight"
+    vrule-width: "0.1cm"
+    vrule-color: novo
+include-in-header:
+      text: |
+        \definecolor{novo}{HTML}{27484b}
+jss-pdf:
+    keep-tex: true   
+pdf-engine: lualatex
+keep-tex: true
+number-sections: false
+toc: true
+lof: false
+lot: false
+mainfont: Faune
+mainfontoptions:
+  - Numbers=OldStyle
+  - Ligatures=TeX
+sansfont: Myriad Pro
+sansfontoptions:
+  - Ligatures=TeX
+fig-cap-location: bottom
+tbl-cap-location: top
+classoption: [french]
+papersize: a4paper
+editor: source
+bibliography: stat.bib
+cite-method: biblatex
+csl: jama.csl
+license: "CC BY-SA"
+---
+---
+
+```{r setup, include= FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, cache = FALSE,
+ fig.width = 7,
+ fig.asp = 0.8,
+ out.width = "100%"
+)
+```
+
+```{r info}
+rm(list=ls())
+library("baseph")
+library("tidyverse")
+library("kableExtra")
+# sessionInfo()
+```
+
+## Généralités
+
+Le risque $\alpha$ retenu sera de 0,05 & la puissance de 0,8.
+
+Sauf indication contraires pour les tests simples les variables numériques seront comparées par un test de Student si possible ( effectifs suffisants, distribution normales (Test de Shapiro-Wilk), égalité des variances) auquel cas un test non paramétrique de Wilcoxon sera utilisé. Un test du $\chi^2$ sera utilisé pour les variables discrètes sous réserve d'un effectif suffisant. À défaut un test de Fischer sera utilisé. Des graphiques seront réalisés pour les résultats importants (package `ggplot2` [@ggplot]).
+
+## Taille de l'échantillon
+ 
+
+```{r}
+#| label: taille
+
+ex <- 0.1
+px <- 0.5
+np <- 10000
+nn <- nb.obs.ph(px = px,ex = ex, np = np)
+nn <- floor(nn*1.1)+1
+```
+
+Il s'agit d'une étude purement observationnelle sans test sur le critère principal. Le  taux  n'étant pas connu on se base sur le taux le plus défavorable soit `r px*100`%. En utilisant un calcul de taille d'échantillon souhaitable pour un sondage, avec pourcentage une marge d'erreur de `r ex * 100` % on obtient un nombre minimal d'environ **`r nn` cas** exploitables. 
+
+## Données manquantes
+
+Le décompte des données manquantes sera réalisé & présenté par un tableau ou un graphique. Les cas où la donnée "Vaccination effectuée" sera maquante seront exclus de l'étude. Les variables comportant trop de données manquantes ou non utilisables ne seront pas prises en compte après validation par le promoteur.
+
+Après ce premier tri une imputation des données manquantes (package `missMDA` [@miss]) sera réalisée uniquement pour l'analyse factorielle & pour la recherche du meilleur modèle par step-by-tep descendant pour les analyses par régression (logistique ou linéaire). Néanmoins pour cette analyse, après choix du modèle, le calcul final sera fait avec les données réelles. 
+
+## Description de la population
+
+### Analyse simple
+
+La description de la population concerne :
+
+Un tableau présentera les valeurs démographiques & clinique pour l'ensemble de la population é pour chaque groupe. Les valeurs numériques seront présentées en médiane & quartiles, les valeurs discrètes en % avec son intervalle de confiance à 95 %. Une différence entre les groupes sera recherchée, item par item afin de valider au mieux l’équivalence entre les groupes.
+
+Une recherche de corrélation (package `corr` [@corr]) entre les variables sera réalisée. Si certaines variables se montreront trop corrélées elles devront être exclues de l'étude après accord du promoteur. 
+
+### Analyse factorielle
+
+Si le nombre de cas recueillis le permet une analyse factorielle en MCA (Analyse de correspondances multiples - package `FactoMineR` [@facto]) sera réalisée. 
+
+Cette analyse ne pourra être qu'après transformation des variables numériques en catégories & imputation des données manquantes ce qui n'est possible que si ces dernières ne sont pas trop nombreuses.
+
+## Objectif principal
+
+*Le couple troponine copeptine dosé lors du premier contact médical permet-il d’exclure le diagnostic de SCA non ST + chez des patients présentant une douleur thoracique de moins de 3 heures.*
+
+Dans un premier temps on va chercher à définir un seuil diagnostic pour la copeptine, le seuil de détection de la troponine étant considéré comme connu. Ce seuil sera défini par l'analyse d'une courbe ROC. 
+
+Une fois ce seuil défini, on testera plusieurs couples troponine/copeptine autour des seuils définis pour chercher le meilleur compromis. On définira alors la sensibilité, la spécificité & la valeur prédictive négative pour plusieurs valeurs. 
+ 
+
+## Objectifs secondaires
+
+### Objectif 1
+
+*Évaluation des performances de diagnostiques de l’association troponine / copeptine selon les facteurs de risque cardiovasculaire (âge, tabac, hypertension, antécédents ischémiques cardiaque, surpoids, hérédité).*
+
+
+Une courbe ROC sera tracée & analysé dans chacun des sous-groupes pour la copeptine. Si le résultat est très différent (plus de 20 % d'écart) par rapport à la population entière on cherchera par la même procédure que pour le critère principal les meilleurs couples troponine/copeptine. 
+
+Il ne faut pas oublier que les effectifs des sous groupes seront très faibles & que les résultats obtenus n'auront qu'une valeur indicative.
+
+### Objectif 2
+
+*Évaluation de la durée du séjour du patient*
+
+La durée de séjour des patient sera présentée en médiane avec avec les quantiles pour les groupes positif ou négatif d'après le couple troponine/copeptine.
+
+### Objectif 3
+
+*Évolution de l’association des dosages en fonction du délai entre 1ère douleur et prélèvements.*
+
+Des corrélations simples seront réalisée  : délai douleur/prélèvement & dosage de copeptine,  délai douleur/prélèvement & dosage de troponine. Un test de corrélation non paramétrique de Spearman sera utilisé. 
+
+
+## Technique
+
+L'analyse statistique sera réalisée avec le logiciel **R**[@rstat] & divers packages. Outre ceux cités dans le texte ou utilisera en particulier `tidyverse` [@tidy] & `baseph` [@baseph].
+
+Un dépôt GitHub sera utilisé qui ne comprendra que le code & non les données ou résultats. Au besoin un faux tableau de données sera présenté pour permettre des tests.
+
+<https://github.com/philippemichel/COPSCA>
