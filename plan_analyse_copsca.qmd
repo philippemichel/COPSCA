@@ -1,6 +1,6 @@
 ---
 title: "CopSCA"
-subtitle: "Plan d'analyse statistique"
+subtitle: "Plan d'analyse statistique V1.1"
 author: 
     - name: "Dr Philippe MICHEL"
       affiliations:
@@ -78,26 +78,33 @@ Le risque $\alpha$ retenu sera de 0,05 & la puissance de 0,8.
 
 Sauf indication contraires pour les tests simples les variables numériques seront comparées par un test de Student si possible ( effectifs suffisants, distribution normales (Test de Shapiro-Wilk), égalité des variances) auquel cas un test non paramétrique de Wilcoxon sera utilisé. Un test du $\chi^2$ sera utilisé pour les variables discrètes sous réserve d'un effectif suffisant. À défaut un test de Fischer sera utilisé. Des graphiques seront réalisés pour les résultats importants (package `ggplot2` [@ggplot]).
 
-## Taille de l'échantillon
- 
 
-```{r}
-#| label: taille
+## nombre de cas 
 
-ex <- 0.1
-px <- 0.5
-np <- 10000
-nn <- nb.obs.ph(px = px,ex = ex, np = np)
-nn <- floor(nn*1.1)+1
+```{r donnees}
+speav <- 0.92 # specificité prévue
+ii <- 0.05 # marge d'erreur
+pmal <- 0.3 # % de malades dans la population
 ```
 
-Il s'agit d'une étude purement observationnelle sans test sur le critère principal. Le  taux  n'étant pas connu on se base sur le taux le plus défavorable soit `r px*100`%. En utilisant un calcul de taille d'échantillon souhaitable pour un sondage, avec pourcentage une marge d'erreur de `r ex * 100` % on obtient un nombre minimal d'environ **`r nn` cas** exploitables. 
+Ce qui nous intéresse est de diagnostiquer les non malades c'est donc la spécificité qui est le marqueur intéressant. Le premier dosage de la troponine (< 6 h) a une spécificité connue de `r speav * 100` % en présence de signes cliniques évocateurs.
+
+
+```{r nbmalades}
+nmal <- (qnorm(0.95)^2 * speav*(1 - speav))/ii^2
+ncas <- nmal/pmal
+ncas <- floor(ncas) + 1
+nmal <- floor(nmal) + 1
+```
+Il faudrait donc `r nmal` cas malades (on tolère une marge d'erreur de 5 %).
+
+Au vu de la littérature, on estime le pourcentage de malades à `r pmal*100` dans notre échantillon ce qui monte le total à **`r ncas` sujets** nécessaires.
 
 ## Données manquantes
 
-Le décompte des données manquantes sera réalisé & présenté par un tableau ou un graphique. Les cas où la donnée "Vaccination effectuée" sera maquante seront exclus de l'étude. Les variables comportant trop de données manquantes ou non utilisables ne seront pas prises en compte après validation par le promoteur.
+Le décompte des données manquantes sera réalisé & présenté par un tableau ou un graphique. Les variables comportant trop de données manquantes ou non utilisables ne seront pas prises en compte après validation par le promoteur.
 
-Après ce premier tri une imputation des données manquantes (package `missMDA` [@miss]) sera réalisée uniquement pour l'analyse factorielle & pour la recherche du meilleur modèle par step-by-tep descendant pour les analyses par régression (logistique ou linéaire). Néanmoins pour cette analyse, après choix du modèle, le calcul final sera fait avec les données réelles. 
+Après ce premier tri une imputation des données manquantes (package `missMDA` [@miss]) sera réalisée uniquement pour l'analyse factorielle. 
 
 ## Description de la population
 
@@ -107,7 +114,7 @@ La description de la population concerne :
 
 Un tableau présentera les valeurs démographiques & clinique pour l'ensemble de la population é pour chaque groupe. Les valeurs numériques seront présentées en médiane & quartiles, les valeurs discrètes en % avec son intervalle de confiance à 95 %. Une différence entre les groupes sera recherchée, item par item afin de valider au mieux l’équivalence entre les groupes.
 
-Une recherche de corrélation (package `corr` [@corr]) entre les variables sera réalisée. Si certaines variables se montreront trop corrélées elles devront être exclues de l'étude après accord du promoteur. 
+Une recherche de corrélation (package `corr` [@corr]) entre les variables sera réalisée. Si certaines variables se montreront trop corrélées elles pourront être exclues de l'étude après accord du promoteur. 
 
 ### Analyse factorielle
 
@@ -117,7 +124,7 @@ Cette analyse ne pourra être qu'après transformation des variables numériques
 
 ## Objectif principal
 
-*Le couple troponine copeptine dosé lors du premier contact médical permet-il d’exclure le diagnostic de SCA non ST + chez des patients présentant une douleur thoracique de moins de 3 heures.*
+*Le couple troponine copeptine dosé lors du premier contact médical permet-il d’exclure le diagnostic de SCA non ST + chez des patients présentant une douleur thoracique de moins de 6 heures.*
 
 Dans un premier temps on va chercher à définir un seuil diagnostic pour la copeptine, le seuil de détection de la troponine étant considéré comme connu. Ce seuil sera défini par l'analyse d'une courbe ROC. 
 
