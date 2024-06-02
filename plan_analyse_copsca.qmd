@@ -1,6 +1,6 @@
 ---
 title: "CopSCA"
-subtitle: "Plan d'analyse statistique V1.1"
+subtitle: "Plan d'analyse statistique V2.0"
 author: 
     - name: "Dr Philippe MICHEL"
       affiliations:
@@ -54,7 +54,8 @@ cite-method: biblatex
 csl: jama.csl
 license: "CC BY-SA"
 ---
----
+
+------------------------------------------------------------------------
 
 ```{r setup, include= FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, cache = FALSE,
@@ -78,8 +79,7 @@ Le risque $\alpha$ retenu sera de 0,05 & la puissance de 0,8.
 
 Sauf indication contraires pour les tests simples les variables numériques seront comparées par un test de Student si possible ( effectifs suffisants, distribution normales (Test de Shapiro-Wilk), égalité des variances) auquel cas un test non paramétrique de Wilcoxon sera utilisé. Un test du $\chi^2$ sera utilisé pour les variables discrètes sous réserve d'un effectif suffisant. À défaut un test de Fischer sera utilisé. Des graphiques seront réalisés pour les résultats importants (package `ggplot2` [@ggplot]).
 
-
-## nombre de cas 
+## nombre de cas
 
 ```{r donnees}
 speav <- 0.92 # specificité prévue
@@ -87,8 +87,7 @@ ii <- 0.05 # marge d'erreur
 pmal <- 0.3 # % de malades dans la population
 ```
 
-Ce qui nous intéresse est de diagnostiquer les non malades c'est donc la spécificité qui est le marqueur intéressant. Le premier dosage de la troponine (< 6 h) a une spécificité connue de `r speav * 100` % en présence de signes cliniques évocateurs.
-
+Ce qui nous intéresse est de diagnostiquer les non malades c'est donc la spécificité qui est le marqueur intéressant. Le premier dosage de la troponine (\< 6 h) a une spécificité connue de `r speav * 100` % en présence de signes cliniques évocateurs.
 
 ```{r nbmalades}
 nmal <- (qnorm(0.95)^2 * speav*(1 - speav))/ii^2
@@ -96,6 +95,7 @@ ncas <- nmal/pmal
 ncas <- floor(ncas) + 1
 nmal <- floor(nmal) + 1
 ```
+
 Il faudrait donc `r nmal` cas malades (on tolère une marge d'erreur de 5 %).
 
 Au vu de la littérature, on estime le pourcentage de malades à `r pmal*100` dans notre échantillon ce qui monte le total à **`r ncas` sujets** nécessaires.
@@ -104,7 +104,7 @@ Au vu de la littérature, on estime le pourcentage de malades à `r pmal*100` da
 
 Le décompte des données manquantes sera réalisé & présenté par un tableau ou un graphique. Les variables comportant trop de données manquantes ou non utilisables ne seront pas prises en compte après validation par le promoteur.
 
-Après ce premier tri une imputation des données manquantes (package `missMDA` [@miss]) sera réalisée uniquement pour l'analyse factorielle. 
+Après ce premier tri une imputation des données manquantes (package `missMDA` [@miss]) sera réalisée uniquement pour l'analyse factorielle.
 
 ## Description de la population
 
@@ -112,24 +112,17 @@ Après ce premier tri une imputation des données manquantes (package `missMDA` 
 
 La description de la population concerne :
 
-Un tableau présentera les valeurs démographiques & clinique pour l'ensemble de la population é pour chaque groupe. Les valeurs numériques seront présentées en médiane & quartiles, les valeurs discrètes en % avec son intervalle de confiance à 95 %. Une différence entre les groupes sera recherchée, item par item afin de valider au mieux l’équivalence entre les groupes.
+Un tableau présentera les valeurs démographiques & clinique pour l'ensemble de la population é pour chaque groupe. Les valeurs numériques seront présentées en médiane & quartiles, les valeurs discrètes en %. Une différence entre les groupes sera recherchée, item par item afin de valider au mieux l’équivalence entre les groupes.
 
-Une recherche de corrélation (package `corr` [@corr]) entre les variables sera réalisée. Si certaines variables se montreront trop corrélées elles pourront être exclues de l'étude après accord du promoteur. 
-
-### Analyse factorielle
-
-Si le nombre de cas recueillis le permet une analyse factorielle en MCA (Analyse de correspondances multiples - package `FactoMineR` [@facto]) sera réalisée. 
-
-Cette analyse ne pourra être qu'après transformation des variables numériques en catégories & imputation des données manquantes ce qui n'est possible que si ces dernières ne sont pas trop nombreuses.
+Une recherche de corrélation (package `corr` [@corr]) entre les variables sera réalisée. Si certaines variables se montreront trop corrélées elles pourront être exclues de l'étude après accord du promoteur.
 
 ## Objectif principal
 
 *Le couple troponine copeptine dosé lors du premier contact médical permet-il d’exclure le diagnostic de SCA non ST + chez des patients présentant une douleur thoracique de moins de 6 heures.*
 
-Dans un premier temps on va chercher à définir un seuil diagnostic pour la copeptine, le seuil de détection de la troponine étant considéré comme connu. Ce seuil sera défini par l'analyse d'une courbe ROC. 
+Dans un premier temps on va chercher à définir un seuil diagnostic pour la copeptine, le seuil de détection de la troponine étant considéré comme connu. Ce seuil sera défini par l'analyse d'une courbe ROC.
 
-Une fois ce seuil défini, on testera plusieurs couples troponine/copeptine autour des seuils définis pour chercher le meilleur compromis. On définira alors la sensibilité, la spécificité & la valeur prédictive négative pour plusieurs valeurs. 
- 
+Une fois ce seuil défini, on testera plusieurs couples troponine/copeptine autour des seuils définis pour chercher le meilleur compromis. On définira alors la sensibilité, la spécificité & la valeur prédictive négative pour plusieurs valeurs.
 
 ## Objectifs secondaires
 
@@ -137,8 +130,7 @@ Une fois ce seuil défini, on testera plusieurs couples troponine/copeptine auto
 
 *Évaluation des performances de diagnostiques de l’association troponine / copeptine selon les facteurs de risque cardiovasculaire (âge, tabac, hypertension, antécédents ischémiques cardiaque, surpoids, hérédité).*
 
-
-Une courbe ROC sera tracée & analysé dans chacun des sous-groupes pour la copeptine. Si le résultat est très différent (plus de 20 % d'écart) par rapport à la population entière on cherchera par la même procédure que pour le critère principal les meilleurs couples troponine/copeptine. 
+Une courbe ROC sera tracée & analysé dans chacun des sous-groupes pour la copeptine. Si le résultat est très différent (plus de 20 % d'écart) par rapport à la population entière on cherchera par la même procédure que pour le critère principal les meilleurs couples troponine/copeptine.
 
 Il ne faut pas oublier que les effectifs des sous groupes seront très faibles & que les résultats obtenus n'auront qu'une valeur indicative.
 
@@ -152,8 +144,9 @@ La durée de séjour des patient sera présentée en médiane avec avec les quan
 
 *Évolution de l’association des dosages en fonction du délai entre 1ère douleur et prélèvements.*
 
-Des corrélations simples seront réalisée  : délai douleur/prélèvement & dosage de copeptine,  délai douleur/prélèvement & dosage de troponine. Un test de corrélation non paramétrique de Spearman sera utilisé. 
+Des corrélations simples seront réalisée : délai douleur/prélèvement & dosage de copeptine, délai douleur/prélèvement & dosage de troponine. Un test de corrélation non paramétrique de Spearman sera utilisé.
 
+### Objectif 4
 
 ## Technique
 

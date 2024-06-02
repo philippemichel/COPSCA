@@ -1,0 +1,271 @@
+---
+title: "COP-SCA"
+subtitle: "Rapport Statistique - V 1.0"
+lang: fr
+language:
+  title-block-author-single: "Auteur"
+author:
+  - name: "D<sup>r</sup> Philippe MICHEL"
+    orcid: "0000-0003-2392-7186"
+    email: "philippe.michel@ght-novo.fr"
+    role: "Statisticien"
+    affiliations:
+      name: "USRC - H\u00f4pital NOVO"
+      city: Pontoise
+      department: "Unit\u00e9 de Soutien à la Recherche Clinique"
+title-block-banner: true
+format:
+  html:
+    embed-resources: true
+    theme: minty
+    code-fold: true
+    html-math-method: katex
+    highlight-style: ayu
+    page-layout: full
+    toc: true
+    number-sections: true
+    smooth-scroll: true
+    citation-hover: true
+bibliography: stat.bib
+csl: jama.csl
+license: "MIT"
+warning: false
+message: false
+cache: false
+---
+
+::: {.panel-tabset}
+
+# Introduction
+
+**Évaluation du retentissement du retour à domicile des nouveau-nés prématurés présentant un retard de croissance intra-utérin avec un poids de moins de 2 kilos sur la morbi/mortalité à court et long terme.**
+
+**Responsable scientifique** : D<sup>r</sup> Rayane MAHFOUZ
+
+**Investigateur coordonnateur** :  D<sup>r</sup> Suzanne BORRHOMEE -- Service de réanimation et médecine néonatale -- NOVO (Site Pontoise)
+
+**Chef de projet** : M<sup>me</sup> Mathilde WLODARCZYK
+
+```{r}
+#| label: setup
+
+rm(list = ls())
+#
+library(baseph)
+library(janitor)
+library(tidyverse)
+library(gtsummary)
+library(kableExtra)
+library(lubridate)
+library(kableExtra)
+library(forestmodel)
+library(labelled)
+library(epiDisplay)
+library(visdat)
+library(GGally)
+library(ggridges)
+library(colorspace)
+library(apyramid)
+library(plotly)
+library(plotROC)
+#
+theme_gtsummary_language(language = "fr", decimal.mark = ",")
+options(OutDec = ",")
+#
+load("datas/copsca.RData")
+expx <- FALSE
+classeur <- "copsca1.xls"
+if (expx){system(paste0("rm -f ",classeur))}
+```
+
+# Description de la population
+
+L'échantillon comporte `r nrow(demog)` cas.
+
+
+## Démographie
+
+```{r}
+#| label: tbl-demog
+#| tbl-cap: Données démographiques
+
+demog |>
+dplyr::select(4:8) |>
+tbl_summary(missing = "no", 
+  #         type = list(pc_cm ~ "continuous", 
+  #                      naisstermsa ~ "continuous"),
+            statistic = list(all_categorical() ~ "{n}/{N} ({p})")) |>
+modify_header(label ~ " ") |>
+bold_labels() |>
+pexptabph(nomfich = classeur,
+nomsheet = "demog1",
+exp = expx) 
+```
+
+```{r}
+#| label: fig-ages
+#| fig-cap: Pyramide des âges
+
+ff <- demog |>
+    mutate(agerec = cut(age,
+    breaks = c(20, 30, 40, 50, 60, 70, 80, 90, 100),
+    labels = c("21-30", "31,40", "41-50", "51-60", "61-70", "71,80", "81-90", ">90")
+))|>
+mutate(agerec = as.factor(agerec)) |>
+# Tracé du graphique
+age_pyramid(age_group = "agerec",
+            split_by = "sex",
+            pal = c("pink", "lightblue"),
+show_midpoint = FALSE) +
+theme_light() +
+    labs(title = "Pyramide des âges",
+        fill = "Sexe")+ 
+    theme(
+      plot.title = element_text(size = 16, face = "bold"),
+      plot.subtitle = element_text(size = 12),
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank(),
+      legend.title = element_blank(),
+      legend.position = "bottom")
+
+ggplotly(ff)
+```
+
+
+
+## Antécédents
+
+```{r}
+#| label: tbl-atcd
+#| tbl-cap: Antécédents
+
+atcd |>
+dplyr::select(!1) |>
+tbl_summary(missing = "no", 
+  #         type = list(pc_cm ~ "continuous", 
+  #                      naisstermsa ~ "continuous"),
+            statistic = list(all_categorical() ~ "{n}/{N} ({p})")) |>
+modify_header(label ~ " ") |>
+bold_labels() |>
+pexptabph(nomfich = classeur,
+nomsheet = "atcd1",
+exp = expx)
+```
+
+## Clinique
+
+```{r}
+#| label: tbl-clinique
+#| tbl-cap: Tableau clinique
+
+patho |>
+dplyr::select(6,7,10:15) |>
+tbl_summary(missing = "no",
+type = list(doulh0 ~ "continuous",
+            doulh3 ~ "continuous"),
+            statistic = list(all_categorical() ~ "{n}/{N} ({p})")) |>
+modify_header(label ~ " ") |>
+bold_labels() |>
+pexptabph(nomfich = classeur,
+nomsheet = "atcd1",
+exp = expx)
+
+```
+
+```{r}
+#| label: tbl-ttantalg
+#| tbl-cap: Traitements antalgiques reçus
+
+patho |>
+dplyr::select(16:22) |>
+tbl_summary(missing = "no",
+            statistic = list(all_categorical() ~ "{n}/{N} ({p})")) |>
+modify_header(label ~ " ") |>
+bold_labels() |>
+pexptabph(nomfich = classeur,
+nomsheet = "atcd1",
+exp = expx)
+```
+
+```{r}
+#| label: tbl-delais
+#| tbl-cap: Délais
+
+patho |>
+dplyr::select(23:24) |>
+tbl_summary(missing = "no",
+            statistic = list(all_categorical() ~ "{n}/{N} ({p})")) |>
+modify_header(label ~ " ") |>
+bold_labels() |>
+pexptabph(nomfich = classeur,
+nomsheet = "atcd1",
+exp = expx)
+```
+
+## Résultats
+
+```{r}
+#| label: tbl-biol
+#| tbl-cap: Biologie
+
+tt |>
+dplyr::select(4,5,8) |>
+tbl_summary(missing = "no",
+            statistic = list(all_categorical() ~ "{n}/{N} ({p})")) |>
+modify_header(label ~ " ") |>
+bold_labels() |>
+pexptabph(nomfich = classeur,
+nomsheet = "atcd1",
+exp = expx)
+
+```
+# Critère principal
+
+Le diagnostic de SCA ST- est porté sur une valeur supérieure à 5 fois la valeur seuil au 99e percentile ou une élévation prouvée des concentrations de troponine cardiaque, avec au moins une valeur supérieure au 99e percentile de la limite supérieure de référence associée à une augmentation ou diminution de la concentration de troponine sur les 2 dosages pour prouver le caractère aigu de cette élévation
+
+Vu avec le laboratoire de l'hôpital les valeurs seuil au 99e percentile sont les suivantes : 
+
+- supérieur à 15.6 pg/mL pour les femmes 
+- supérieur à 34.2 pg/mL pour les hommes
+
+## Recheche d'un seuil pour la CoPeptine
+
+Dans un premier temps, nous avons cherché un seuil pour la copeptine sans tenir compte de la troponine.
+
+```{r}
+#| label: fig-roc_copeptine
+#| fig-cap: Copeptine à H0 - Courbe ROC
+#| fig-asp: 1
+
+zz <- tt |>
+mutate(sca3 = ifelse(sca3 == "yes", 1, 0)) |>
+ggplot() +
+aes(d = sca3, m = copepth0) +
+geom_roc() +
+style_roc(guide = TRUE, theme = theme_light) +
+geom_abline(aes(intercept = 0, slope  = 1), linetype = 1) +
+labs(title = "CoPeptine H0", 
+     x = " 1 - sensibilité", 
+     y = "Spécificité") +
+theme(plot.title = element_text(size = 16, face = "bold"),
+axis.title.x = element_text(size = 12),
+axis.title.y = element_text(size = 12))
+
+
+zz +
+geom_rocci(fill = "pink") +
+annotate(
+"text",
+x = .75,
+y = .25,
+size = 6,
+label = paste("AUC =", round(calc_auc(zz)$AUC, 2))
+)
+
+```
+
+Le seuil de 11,8 pg/mL semble intéressant.Notons que l'AUC (aire sous la courbe) reste modeste. De plus vu l'échantillon modeste les intervalles de confiance (en rose sur la courbe) sont larges.
+
+
+
+:::
