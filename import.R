@@ -94,8 +94,13 @@ var_label(tt$tp0) <- "Troponine h0 anormale"
 var_label(tt$cp0) <- "Copeptine h0 anormale"
 var_label(tt$tpcp0) <- "Troponine ou copeptine h0 anormale"
 var_label(tt$sca3) <- "SCA ST-"
-
-
+#
+# finet
+zz1 <- as.numeric(dmy_hms(paste0(finet$sortiurgdte," ",finet$sortiurghr)))
+zz2 <- as.numeric(dmy_hms(paste0(patho$urgencdte," ", patho$urgenhr)))
+zz <- (zz1 - zz2)/3600
+finet <- finet |> 
+  mutate(duree_urg = zz)
 
 #
 save(atcd, demog, finet, patho, tt, file="data/copsca.RData")

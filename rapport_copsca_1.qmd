@@ -114,6 +114,17 @@ return(list(ssb = ssbt, ssp = sspt, vvpt = vvpt, vvn = vvnt))
 }
 ```
 
+```{r}
+#| label: macro_date
+
+difdate <- function(dd1,hh1,dd2,hh2){
+  zz1 <- as.numeric(dmy_hms(paste0(dd1," ",hh1)))
+  zz2 <- as.numeric(dmy_hms(paste0(dd2," ",hh2)))
+  dif <- (zz2 - zz1)/60
+  return(dif)
+}
+```
+
 
 # Description de la population
 
@@ -270,6 +281,7 @@ scale_x_continuous(trans='log10') +
 geom_vline(aes(xintercept = 15.6), linetype = "dashed", color = "red") +
 geom_vline(aes(xintercept = 34.2), linetype = "dashed", color = "blue") +
 theme_light() +
+
     labs(title = "Troponine à H0",
         fill = "Sexe",
 x = "pg/mL", 
@@ -298,6 +310,7 @@ theme_light() +
         fill = "Sexe",
 x = "pg/mL", 
 y = "n")+ 
+scale_fill_discrete_qualitative(palette = "Dark 3") +
     theme(
       plot.title = element_text(size = 16, face = "bold"),
       plot.subtitle = element_text(size = 12),
@@ -500,7 +513,8 @@ geom_density(alpha = 0.5) +
 geom_vline(aes(xintercept = 10), linetype = "dashed", color = "black") +
 scale_x_continuous(trans='log10') +
 theme_light() +
-    labs(title = "Copeptine H0 selon le diagnostic final",
+scale_fill_discrete_qualitative(palette = "Dark 3") +    
+labs(title = "Copeptine H0 selon le diagnostic final",
        fill = "SCA ST -",
 x = "copeptine (pg/mL)", 
 y = "Troponine (pg/mL)") +
@@ -658,12 +672,91 @@ column_spec(1, bold = TRUE) |>
 ```{r}
 #| label: tbl-crti2
 
-tta <-  left_join(tt,patho, by = "subjid")
-tta <- left_join(tta,finet, by = "subjid")
+var_label(finet$duree_urg) <- "Durée du séjour aux urgences (heures)"
+tt |> 
+left_join(patho, by = "subjid") |> 
+left_join(finet, by = "subjid") |> 
+tbl_continuous(variable = duree_urg, include = c(tp0, cp0,tpcp0)) |> 
+add_p() |> 
+bold_labels() |> 
+pexptabph(nomfich = classeur,
+nomsheet = "dsej",
+exp = expx)
+``` 
+
+## Critère 3
+*Évolution de l’association des dosages en fonction du délai entre 1ère douleur et prélèvements.*
+
+```{r}
+#| label: tbl-delai2
+#| tbl-cap: dosage vs délai douleur-prélèvement.
+
+tta <- left_join(tt,patho, by = "subjid")
+tta$dd = difdate(tta$symptodte, tta$symptohr, tta$prelh0dte, tta$prelh0hr)
+
+aa <- NULL
+zz <- cor.test(tta$tropoh0,tta$dd)
+ll <- beaup(zz$p.value,affp= FALSE)
+aa <- rbind(aa, c("Troponine",round(zz[[4]],2),ll))
+#
+zz <- cor.test(tta$copepth0,tta$dd)
+ll <- beaup(zz$p.value,affp= FALSE)
+aa <- rbind(aa, c("Copeptine",round(zz[[4]],2),ll))
+#
+zz <- as_tibble(aa)
+names(zz) <- c("Dosage à H0","r","p-value")
+zz |> 
+   kbl(longtable = lg, booktabs = TRUE) |>
+      kable_styling(bootstrap_options = c("striped", "hover", "responsive")) 
+```
+
+Le délai douleur-prélèvement ne semble influer sur les dosages de troponine ou de copeptine.
+
+## Critère 4
+*Évaluation de l’évolution de la douleur via l’échelle numérique entre l’arrivée aux urgences et la réévaluation à 3 heures*
+
+```{r}
+#| label: tbl-douleur
+#| tbl-cap: Évolution de la douleur
+
+tta |> 
+mutate(ddoul =  doulh3- doulh0) |>
+dplyr::select(doulh0, doulh3, ddoul) |>
+tbl_summary(missing = "no", 
+type=list(doulh3~"continuous")) |>
+add_n() |>
+bold_labels() |> 
+ modify_header(label ~ "") |> 
+pexptabph(nomfich = classeur,
+nomsheet = "douleur",
+exp = expx)
+```
+
+```{r}
+#| label: fig-douleur
+#| fig-cap: Évolution de la douleur
+
+patho |> 
+dplyr::select(subjid, doulh0, doulh3) |> 
+pivot_longer(cols = c(doulh0, doulh3), names_to = "heure", values_to = "douleur") |> 
+mutate(heure = factor(heure, labels = c("H0", "H3"))) |>
+ggplot() +
+aes(x = heure, y = douleur, fill = heure) +
+geom_violin() +
+geom_boxplot(width = 0.1, fill ="grey90") +
+theme_light() +
+ scale_fill_discrete_qualitative(palette = "Dark 3") +
+    labs(title = "Évolution de la douleur") +
+    theme(
+      plot.title = element_text(size = 16, face = "bold"),
+      plot.subtitle = element_text(size = 12),
+      axis.title.x = element_text(size = 12),
+      axis.title.y = element_text(size = 12),
+      legend.title = element_text(size = 12),
+      legend.position = "none")
+
 ```
 
 
 
-tta =  left_join(tt,patho, by = "subjid")
-tta 
 :::
