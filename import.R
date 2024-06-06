@@ -17,8 +17,8 @@ library(baseph)
 
   #
 importr <- function(nn){
-  nna <- c("NA",""," ", "C", "D", "K","A")
-  nnd <- paste0("datas/",nn, ".ods")
+  nna <- c("NA",""," ", "C", "D", "K","A", "Non disponible", "no disponible")
+  nnd <- paste0("data/",nn, ".ods")
   nn <- read_ods(nnd, na = nna) |>
     clean_names() |>
     mutate_if(is.character, as.factor)
@@ -27,7 +27,7 @@ importr <- function(nn){
   return(nn)
 }
 
-fich <- c("atcd","demog","finet","patho","resultats")
+fich <- c("atcd","demog","finet","patho","result")
 for (f in fich){
   assign(f, importr(f))
 }
@@ -36,7 +36,6 @@ for (f in fich){
 
 demog <- demog |>
   mutate(naisdte = as.character(naisdte)) |>
-  mutate(naisdte = paste0(str_sub(naisdte,1,6),"19",str_sub(naisdte,7,8))) |>
   mutate(incldte = dmy(as.character(incldte))) |>
   mutate(naisdte = dmy(naisdte)) |>
   mutate(age = as.numeric(incldte - naisdte)/365.25) |>
@@ -45,6 +44,12 @@ demog <- demog |>
 
 var_label(demog$age) <- "Âge"
 var_label(demog$imc) <- "IMC"
+
+# ATCD
+
+atcd <- atcd |> 
+  mutate(tabacon = fct_relevel(tabacon,
+    "Aucun", "Actif", "Sevré"))
 
 # Patho
 
@@ -65,12 +70,14 @@ var_label(patho$urg_h3) <- "Délai urgences-évaluation h3 (min)"
 
 # Résultats
 
-tt <- left_join(resultats, demog, by="subjid") |>
+tt <- left_join(result, demog, by="subjid") |>
   mutate(sca3  = ifelse((tropoh3> 34.2 & sex == "Masculin") |(tropoh3> 15.6 & sex == "Féminin") ,"yes","no")) |>
   mutate(sca3 = as.factor(sca3)) |>
-  mutate(sca0  = ifelse((tropoh0> 34.2 & sex == "Masculin") |(tropoh0> 15.6 & sex == "Féminin") ,"yes","no")) |>
-  mutate(sca0 = as.factor(sca0))
+  mutate(sca3 = fct_relevel(sca3,"yes", "no")) |> 
+  mutate(cptr0  = ifelse((tropoh0> 34.2 & sex == "Masculin") |(tropoh0> 15.6 & sex == "Féminin") ,"yes","no")) |>
+  mutate(cptr0 = as.factor(cptr0))|>
+    mutate(cptr0 = fct_relevel(cptr0,"yes", "no"))
 
 
 #
-save(atcd, demog, finet, patho, tt, file="datas/copsca.RData")
+save(atcd, demog, finet, patho, tt, file="data/copsca.RData")

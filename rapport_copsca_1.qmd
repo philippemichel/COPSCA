@@ -38,13 +38,14 @@ cache: false
 
 # Introduction
 
-**Évaluation du retentissement du retour à domicile des nouveau-nés prématurés présentant un retard de croissance intra-utérin avec un poids de moins de 2 kilos sur la morbi/mortalité à court et long terme.**
+**Place du dosage copeptine - troponine dans le diagnostic d’élimination des SCA non ST+ dans la prise en charge des douleurs thoraciques non traumatiques en pré et intra hospitalier chez l’adulte.**
 
-**Responsable scientifique** : D<sup>r</sup> Rayane MAHFOUZ
+**Responsable scientifique** : M<sup>me</sup> Marion DUPAIN
 
-**Investigateur coordonnateur** :  D<sup>r</sup> Suzanne BORRHOMEE -- Service de réanimation et médecine néonatale -- NOVO (Site Pontoise)
+**Investigateur coordonnateur** :  D<sup>r</sup> Olivier FANCELLI 
+Service d’Accueil des Urgences – NOVO (Site Pontoise)
 
-**Chef de projet** : M<sup>me</sup> Mathilde WLODARCZYK
+**Chef de projet** : M<sup>me</sup> Véronique DA COSTA
 
 ```{r}
 #| label: setup
@@ -72,7 +73,7 @@ library(plotROC)
 theme_gtsummary_language(language = "fr", decimal.mark = ",")
 options(OutDec = ",")
 #
-load("datas/copsca.RData")
+load("data/copsca.RData")
 expx <- FALSE
 classeur <- "copsca1.xls"
 if (expx){system(paste0("rm -f ",classeur))}
@@ -202,7 +203,9 @@ nomsheet = "atcd1",
 exp = expx)
 ```
 
-## Résultats
+# Résultats biologiques
+
+Description simple des divers taux de troponine & copeptine.
 
 ```{r}
 #| label: tbl-biol
@@ -217,24 +220,132 @@ bold_labels() |>
 pexptabph(nomfich = classeur,
 nomsheet = "atcd1",
 exp = expx)
+```
+
+```{r}
+#| label: fig-tropoh0
+#| fig-cap: Troponine à H0
+
+tt |> 
+ggplot() +
+aes(x = tropoh0, fill = sex) +
+geom_density(alpha = 0.5) +
+scale_x_continuous(trans='log10') +
+geom_vline(aes(xintercept = 15.6), linetype = "dashed", color = "red") +
+geom_vline(aes(xintercept = 34.2), linetype = "dashed", color = "blue") +
+theme_light() +
+    labs(title = "Troponine à H0",
+        fill = "Sexe",
+x = "pg/mL", 
+y = "n")+ 
+    theme(
+      plot.title = element_text(size = 16, face = "bold"),
+      plot.subtitle = element_text(size = 12),
+      axis.title.x = element_text(size = 12),
+      axis.title.y = element_text(size = 12),
+      legend.title = element_blank(),
+      legend.position = "bottom")
+```
+
+```{r}
+#| label: fig-cpt0
+#| fig-cap: copeptine à H0
+
+tt |> 
+ggplot() +
+aes(x = copepth0, fill = sex) +
+geom_density(alpha = 0.5) +
+scale_x_continuous(trans='log10') +
+geom_vline(aes(xintercept = 10), linetype = "dashed", color = "black")  +
+theme_light() +
+    labs(title = "copeptine à H0",
+        fill = "Sexe",
+x = "pg/mL", 
+y = "n")+ 
+    theme(
+      plot.title = element_text(size = 16, face = "bold"),
+      plot.subtitle = element_text(size = 12),
+      axis.title.x = element_text(size = 12),
+      axis.title.y = element_text(size = 12),
+      legend.title = element_blank(),
+      legend.position = "bottom")
+```
+
+## Corrélation entre la copeptine et la troponine
+
+```{r}
+#| label: fig-trpopct0
+#| fig-cap: Corrélation copeptine/troponine
+
+zzc <- cor.test(tt$copepth0, tt$tropoh0, method = "spearman")
+zzc <- beaup(zzc[[3]], affp = 1)
+
+tt |>
+ggplot() +
+aes(x = copepth0, y = tropoh0, color = sex) +
+geom_jitter()+
+geom_smooth(method = "lm", se = TRUE, alpha = 0.2) +
+scale_x_continuous(trans='log10') +
+scale_y_continuous(trans='log10') +
+theme_light() +
+    labs(title = "Corrélation copeptine/troponine",
+        fill = "Sexe",
+x = "copeptine (pg/mL)", 
+y = "Troponine (pg/mL)") +
+    theme(
+      plot.title = element_text(size = 16, face = "bold"),
+      plot.subtitle = element_text(size = 12),
+      axis.title.x = element_text(size = 12),
+      axis.title.y = element_text(size = 12),
+      legend.title = element_blank(),
+      legend.position = "bottom")
 
 ```
+
+```{r}
+#| label: tbl-tpcp2
+#| tbl-cap: Corrélation copeptine/troponine
+
+tt <- tt |>
+  mutate(tp0 = ifelse((tropoh0 > 15.6 &
+                         sex == "Féminin") |
+                        (tropoh0 > 34.2 & sex == "Masculin"),
+                      "yes",
+                      "no"
+  )) |>
+  mutate(tp0 = as.factor(tp0)) |>
+  mutate(tp0 = fct_relevel(tp0, "yes", "no")) |>
+  mutate(cp0 = ifelse(copepth0 > 10, "yes", "no")) |>
+  mutate(cp0 = as.factor(cp0)) |> 
+mutate(cp0 = fct_relevel(cp0, "yes", "no")) 
+var_label(tt$tp0) <- "Troponine h0 anormale"
+var_label(tt$cp0) <- "Copeptine h0 anormale"
+tt |> 
+  tbl_cross(tp0, cp0,percent = "cell") |> 
+bold_labels() |>
+add_p() |> 
+pexptabph(nomfich = classeur,
+nomsheet = "ptcp2",
+exp = expx)
+```
+
+
 # Critère principal
 
-Le diagnostic de SCA ST- est porté sur une valeur supérieure à 5 fois la valeur seuil au 99e percentile ou une élévation prouvée des concentrations de troponine cardiaque, avec au moins une valeur supérieure au 99e percentile de la limite supérieure de référence associée à une augmentation ou diminution de la concentration de troponine sur les 2 dosages pour prouver le caractère aigu de cette élévation
+Le diagnostic de SCA ST- est porté sur une valeur supérieure à 5 fois la valeur seuil au 99<sup>e</sup> percentile ou une élévation prouvée des concentrations de troponine cardiaque, avec au moins une valeur supérieure au 99<sup>e</sup> percentile de la limite supérieure de référence associée à une augmentation ou diminution de la concentration de troponine sur les 2 dosages pour prouver le caractère aigu de cette élévation
 
 Vu avec le laboratoire de l'hôpital les valeurs seuil au 99e percentile sont les suivantes : 
 
 - supérieur à 15.6 pg/mL pour les femmes 
 - supérieur à 34.2 pg/mL pour les hommes
 
-## Recheche d'un seuil pour la CoPeptine
+## Recheche d'un seuil pour la copeptine
 
 Dans un premier temps, nous avons cherché un seuil pour la copeptine sans tenir compte de la troponine.
 
 ```{r}
 #| label: fig-roc_copeptine
-#| fig-cap: Copeptine à H0 - Courbe ROC
+#| fig-cap: copeptine à H0 - Courbe ROC
 #| fig-asp: 1
 
 zz <- tt |>
@@ -243,8 +354,8 @@ ggplot() +
 aes(d = sca3, m = copepth0) +
 geom_roc() +
 style_roc(guide = TRUE, theme = theme_light) +
-geom_abline(aes(intercept = 0, slope  = 1), linetype = 1) +
-labs(title = "CoPeptine H0", 
+geom_abline(aes(intercept = 0, slope  = 1), linetype = 2, color = "grey50") +
+labs(title = "copeptine H0", 
      x = " 1 - sensibilité", 
      y = "Spécificité") +
 theme(plot.title = element_text(size = 16, face = "bold"),
@@ -261,11 +372,46 @@ y = .25,
 size = 6,
 label = paste("AUC =", round(calc_auc(zz)$AUC, 2))
 )
-
 ```
 
-Le seuil de 11,8 pg/mL semble intéressant.Notons que l'AUC (aire sous la courbe) reste modeste. De plus vu l'échantillon modeste les intervalles de confiance (en rose sur la courbe) sont larges.
+Le seuil de 11,8 pg/mL semble intéressant. Notons que l'AUC (aire sous la courbe) reste modeste. De plus vu l'échantillon modeste les intervalles de confiance (en rose sur la courbe) sont larges. Donc nous resterons sur la seuil proposé par le laboratoire de Tenon à 10 pg/mL.
 
 
+
+## Seuil selon la troponine
+
+Nous essayons de voir si le seuil varie selon la le taux de troponine à H0. 
+
+```{r}
+#| label: fig-roc_copeptine_tropo
+#| fig-cap: copeptine à H0 selon la troponine - Courbe ROC
+#| fig-asp: 1
+
+
+tt |>
+mutate(tp0 =  cut(tropoh0,
+  breaks = c(0, 5, 20, 40,1000),
+  labels = c("Normale","6-20", "21-40", ">40"))) |> 
+mutate(tp0 = as.factor(tp0)) |>
+mutate(sca3 = ifelse(sca3 == "yes", 1, 0)) |>
+ggplot() +
+aes(d = sca3, m = copepth0, color = tp0) +
+geom_roc() +
+style_roc(guide = TRUE, theme = theme_light) +
+geom_abline(aes(intercept = 0, slope  = 1), linetype = 2, color = "grey50") +
+labs(title = "copeptine H0",
+     fill = "Troponine (pg/mL)" ,
+     x = " 1 - sensibilité", 
+     y = "Spécificité") +
+theme(plot.title = element_text(size = 16, face = "bold"),
+axis.title.x = element_text(size = 12),
+axis.title.y = element_text(size = 12))
+```
+
+Vu le faible nombre de cas dans chaque tranche de copeptine les intervalles de confiance (non représentés) sont énormes. Il semble néanmoins que le dosage de la CopPeptine serait plus intéressant quand la troponine est basse.  
+
+# Valeur du test
+
+On regarde, sur tout l'échantillon, la valeur du test combinant troponine & copeptine avec les valeurs seuil usuelles. 
 
 :::
