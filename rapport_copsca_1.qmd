@@ -79,6 +79,42 @@ classeur <- "copsca1.xls"
 if (expx){system(paste0("rm -f ",classeur))}
 ```
 
+```{r}
+#| label: macro_diag
+
+diagci <- function(pp,nn){
+vpp <- qnorm(0.975) * sqrt(pp*(1-pp)/nn)
+#if (vpp == 0){vpp = NA}
+pp0 <- round(100*pp,0)
+vpp1 <- round(100*(pp - vpp),0)
+if(vpp1 <= 0){vpp1 = NA}
+vpp2 <- round(100*(pp + vpp),0)
+if(vpp2 >= 100){vpp2 = NA}
+ppt <- paste0(pp0, " (", vpp1, ";", vpp2, ")")
+return(ppt)
+}
+
+
+diagph <- function(test, gold){
+zz <- table(test, gold)
+#
+ssb <- zz[1,1]/(zz[1,1] + zz[2,1])
+ssbt <- diagci(ssb, zz[1,1] + zz[2,1])
+#
+ssp <- zz[2,2]/(zz[2,2] + zz[1,2])
+sspt <- diagci(ssp, zz[2,2] + zz[1,2])
+#
+vvp <- zz[1,1]/(zz[1,1] + zz[1,2])
+vvpt <- diagci(vvp, zz[1,1] + zz[1,2])
+#
+vvn <- zz[2,2]/(zz[2,1] + zz[2,2])
+vvnt <- diagci(vvn, zz[2,1] + zz[2,2])
+#
+return(list(ssb = ssbt, ssp = sspt, vvpt = vvpt, vvn = vvnt))
+}
+```
+
+
 # Description de la population
 
 L'échantillon comporte `r nrow(demog)` cas.
@@ -304,22 +340,8 @@ y = "Troponine (pg/mL)") +
 
 ```{r}
 #| label: tbl-tpcp2
-#| tbl-cap: Corrélation copeptine/troponine
+#| tbl-cap: Corrélation Copeptine/Troponine
 
-tt <- tt |>
-  mutate(tp0 = ifelse((tropoh0 > 15.6 &
-                         sex == "Féminin") |
-                        (tropoh0 > 34.2 & sex == "Masculin"),
-                      "yes",
-                      "no"
-  )) |>
-  mutate(tp0 = as.factor(tp0)) |>
-  mutate(tp0 = fct_relevel(tp0, "yes", "no")) |>
-  mutate(cp0 = ifelse(copepth0 > 10, "yes", "no")) |>
-  mutate(cp0 = as.factor(cp0)) |> 
-mutate(cp0 = fct_relevel(cp0, "yes", "no")) 
-var_label(tt$tp0) <- "Troponine h0 anormale"
-var_label(tt$cp0) <- "Copeptine h0 anormale"
 tt |> 
   tbl_cross(tp0, cp0,percent = "cell") |> 
 bold_labels() |>
@@ -345,7 +367,7 @@ Dans un premier temps, nous avons cherché un seuil pour la copeptine sans tenir
 
 ```{r}
 #| label: fig-roc_copeptine
-#| fig-cap: copeptine à H0 - Courbe ROC
+#| fig-cap: Copeptine à H0 - Courbe ROC
 #| fig-asp: 1
 
 zz <- tt |>
@@ -355,7 +377,7 @@ aes(d = sca3, m = copepth0) +
 geom_roc() +
 style_roc(guide = TRUE, theme = theme_light) +
 geom_abline(aes(intercept = 0, slope  = 1), linetype = 2, color = "grey50") +
-labs(title = "copeptine H0", 
+labs(title = "Copeptine H0", 
      x = " 1 - sensibilité", 
      y = "Spécificité") +
 theme(plot.title = element_text(size = 16, face = "bold"),
@@ -399,7 +421,7 @@ aes(d = sca3, m = copepth0, color = tp0) +
 geom_roc() +
 style_roc(guide = TRUE, theme = theme_light) +
 geom_abline(aes(intercept = 0, slope  = 1), linetype = 2, color = "grey50") +
-labs(title = "copeptine H0",
+labs(title = "Copeptine H0",
      fill = "Troponine (pg/mL)" ,
      x = " 1 - sensibilité", 
      y = "Spécificité") +
@@ -408,10 +430,240 @@ axis.title.x = element_text(size = 12),
 axis.title.y = element_text(size = 12))
 ```
 
-Vu le faible nombre de cas dans chaque tranche de copeptine les intervalles de confiance (non représentés) sont énormes. Il semble néanmoins que le dosage de la CopPeptine serait plus intéressant quand la troponine est basse.  
+Vu le faible nombre de cas dans chaque tranche de copeptine les intervalles de confiance (non représentés) sont énormes. Il semble néanmoins que le dosage de la copeptine serait plus intéressant quand la troponine est basse.  
 
-# Valeur du test
+## Valeur du test
 
-On regarde, sur tout l'échantillon, la valeur du test combinant troponine & copeptine avec les valeurs seuil usuelles. 
+On regarde, sur tout l'échantillon, la valeur des tests troponine seule, copeptine seule &  troponine + copeptine. Cette analyse est faite avec les valeurs seuil usuelles. 
 
+```{r}
+#| label: tbl-diagtot
+#| tbl-cap: Valeur diagnostic des tests
+
+tt_ps = diagph(tt$tp0, tt$sca3)
+tt_pc = diagph(tt$cp0, tt$sca3)
+tt_tpcp = diagph(tt$tpcp0, tt$sca3)
+diagx <- tibble(tt_ps, tt_pc, tt_tpcp) |> 
+mutate(test = as.factor(c("Sensibilité","Spécificité","VPP","VPN"))) |> 
+relocate(test, .before = tt_ps)
+names(diagx) <- c("Test","Troponine","Copeptine","Troponine + Copeptine")
+
+
+diagx |> 
+   kbl(longtable = lg, booktabs = TRUE) |>
+      kable_styling(bootstrap_options = c("striped", "hover", "responsive")) |> 
+column_spec(1, bold = TRUE) |>
+  footnote(general = "N = 91. Les valeurs sont données avec leur intervalle de confiance à 95 %.")
+```
+
+::: {.callout-tip}
+## Résultat principal
+
+Sur un test de première ligne comme celui-ci (un faux positif sera rapidement corrigé, un faux négatif renvoyé à la maison serait plus gênant) la **sensibilité** est le critère le plus important. Le gain via l'ajout de copeptine semble important. 
+:::
+
+```{r}
+#| label: fig-ssbtropo
+#| fig-cap: Troponine H0 selon le diagnostic final
+
+tt |>
+ggplot() +
+aes(x  = tropoh0, fill = sca3) +
+geom_density(alpha = 0.5) +
+geom_vline(aes(xintercept = 15.6), linetype = "dashed", color = "red") +
+geom_vline(aes(xintercept = 34.2), linetype = "dashed", color = "blue") +
+scale_x_continuous(trans='log10') +
+theme_light() +
+    labs(title = "Troponine H0 selon le diagnostic final",
+       fill = "SCA ST -",
+x = "copeptine (pg/mL)", 
+y = "Troponine (pg/mL)") +
+    theme(
+      plot.title = element_text(size = 16, face = "bold"),
+      plot.subtitle = element_text(size = 12),
+      axis.title.x = element_text(size = 12),
+      axis.title.y = element_text(size = 12),
+      legend.title = element_text(size = 12),
+      legend.position = "bottom")
+
+
+```
+
+```{r}
+#| label: fig-ssbcopept
+#| fig-cap: Copeptine H0 selon le diagnostic final
+
+tt |>
+ggplot() +
+aes(x  = copepth0, fill = sca3) +
+geom_density(alpha = 0.5) +
+geom_vline(aes(xintercept = 10), linetype = "dashed", color = "black") +
+scale_x_continuous(trans='log10') +
+theme_light() +
+    labs(title = "Copeptine H0 selon le diagnostic final",
+       fill = "SCA ST -",
+x = "copeptine (pg/mL)", 
+y = "Troponine (pg/mL)") +
+    theme(
+      plot.title = element_text(size = 16, face = "bold"),
+      plot.subtitle = element_text(size = 12),
+      axis.title.x = element_text(size = 12),
+      axis.title.y = element_text(size = 12),
+      legend.title = element_text(size = 12),
+      legend.position = "bottom")
+
+
+```
+
+##  Recherche des meilleurs seuils.
+
+### Seuil optimal Copeptine
+
+Sur notre échantillon le seuil optimal pour la copeptine serait de 11,8 pg/mL. On refait donc les calculs avec ce seuil.
+
+```{r}
+#| label: tbl-diagtot2
+#| tbl-cap: Tests avec seuil optimisé de Copeptine
+
+nnn <- length(tt$copepth0[tt$copepth0>10 & tt$copepth0<11.8])
+
+
+zz <- tt |>
+  mutate(cpx = ifelse(copepth0 > 11.8, "yes", "no")) |>
+  mutate(cpx = as.factor(cpx)) |> 
+  mutate(cpx = fct_relevel(cpx, "yes", "no")) |> 
+  mutate(tpcpx = ifelse(tp0 == "yes" | cpx == "yes", "yes", "no")) |> 
+  mutate(tpcpx = as.factor(tpcpx)) |> 
+  mutate(tpcpx = fct_relevel(tpcpx, "yes", "no"))
+
+tt_ps = diagph(zz$tp0, zz$sca3)
+tt_pc = diagph(zz$cpx, zz$sca3)
+tt_tpcp = diagph(zz$tpcpx, zz$sca3)
+diagx <- tibble(tt_ps, tt_pc, tt_tpcp) |> 
+mutate(test = as.factor(c("Sensibilité","Spécificité","VPP","VPN"))) |> 
+relocate(test, .before = tt_ps)
+names(diagx) <- c("Test","Troponine","Copeptine","Troponine + Copeptine")
+
+
+diagx |> 
+   kbl(longtable = lg, booktabs = TRUE) |>
+      kable_styling(bootstrap_options = c("striped", "hover", "responsive")) |> 
+column_spec(1, bold = TRUE) |>
+  footnote(general = "N = 91. Les valeurs sont données avec leur intervalle de confiance à 95 %.")
+
+rm(zz)
+```
+
+Ce changement de seuil ne modifie la classification que pour `r nnn` patients & n'introduit pas de changement majeur. 
+
+
+### patient avec troponine normale
+
+On peut s'intéresser aux patients avec une troponine normale vu la @fig-roc_copeptine_tropo. Attention, le nombre de sujet est plus faible donc les conclusions sont à prendre avec précaution. De plus la différence avec l'échantillon global est peu importante (7 cas de moins) donc il est peu probable de mettre une différence en évidence. La courbe ROC, basée sur les taux de troponine & non une classification, est plus sensible.
+
+```{r}
+#| label: tbl-tpn
+#| tbl-cap: Patient avec troponine normale
+
+zz <- tt |> 
+dplyr::filter(tp0 == "no")
+tt_pc = diagph(zz$cp0, zz$sca3)
+tt_tpcp = diagph(zz$tpcp0, zz$sca3)
+diagx <- tibble(tt_pc, tt_tpcp) |> 
+mutate(test = as.factor(c("Sensibilité","Spécificité","VPP","VPN"))) |> 
+relocate(test, .before = tt_pc)
+names(diagx) <- c("Test","Copeptine","Troponine + Copeptine")
+
+diagx |> 
+   kbl(longtable = lg, booktabs = TRUE) |>
+      kable_styling(bootstrap_options = c("striped", "hover", "responsive")) |> 
+column_spec(1, bold = TRUE) |>
+  footnote(general = "N = 91. Les valeurs sont données avec leur intervalle de confiance à 95 %.")
+
+rm(zz)
+```
+
+
+# Critères secondaires
+
+##Critère 1
+*Évaluation des performances de diagnostiques de l’association troponine / copeptine selon les facteurs de risque cardiovasculaire (âge, tabac, hypertension, antécédents ischémiques cardiaque, surpoids, hérédité)*
+    
+On n'étudie ici que la sensibilité du test par population. 
+
+```{r}
+#| label: tbl-crti1
+#| tbl-cap: Performance diagnostique selon la population
+tta <- left_join(tt,atcd, by = "subjid")
+fr <- NULL
+#
+zz <- diagph(tt$tpcp0, tt$sca3) 
+ntot <- nrow(tt)
+tot <- c("Total",ntot, zz[[1]], zz[[2]], zz[[3]], zz[[4]])
+fr <- rbind(fr, tot)
+#
+ttn <- tta |> 
+dplyr::filter(age > 59.9)
+zz <- diagph(ttn$tpcp0, ttn$sca3)
+ntot <- nrow(ttn)
+age <- c("Âge > 60 ans",ntot, zz[[1]], zz[[2]], zz[[3]], zz[[4]])
+fr <- rbind(fr, age)
+#
+ttn <- tta |> 
+dplyr::filter(tabacon != "Aucun")
+zz <- diagph(ttn$tpcp0, ttn$sca3)
+ntot <- nrow(ttn)
+tabac <- c("Tabagisme",ntot, zz[[1]], zz[[2]], zz[[3]], zz[[4]])
+fr <- rbind(fr, tabac)
+#
+ttn <- tta |> 
+dplyr::filter(htaon == "yes")
+zz <- diagph(ttn$tpcp0, ttn$sca3)
+ntot <- nrow(ttn)
+hta <- c("HTA",ntot, zz[[1]], zz[[2]], zz[[3]], zz[[4]])
+fr <- rbind(fr, hta)
+#
+ttn <- tta |> 
+dplyr::filter(cardiopathon == "yes")
+zz <- diagph(ttn$tpcp0, ttn$sca3)
+ntot <- nrow(ttn)
+cv <- c("Cardiopathie ischémique",ntot, zz[[1]], zz[[2]], zz[[3]], zz[[4]])
+fr <- rbind(fr, cv)
+#
+ttn <- tta |> 
+dplyr::filter(surpdson == "yes")
+zz <- diagph(ttn$tpcp0, ttn$sca3)
+ntot <- nrow(ttn)
+pds <- c("Surpoids",ntot, zz[[1]], zz[[2]], zz[[3]], zz[[4]])
+
+#
+ttn <- tta |> 
+dplyr::filter(cardiopatfamilion == "yes")
+zz <- diagph(ttn$tpcp0, ttn$sca3)
+ntot <- nrow(ttn)
+hered <- c("Hérédité",ntot, zz[[1]], zz[[2]], zz[[3]], zz[[4]])
+fr <- rbind(fr, pds, hered)
+row.names(fr) <- NULL
+colnames(fr) <- c("Population","N","Sensibilité","Spécificité","VPP","VPN")
+fr |> 
+   kbl(longtable = lg, booktabs = TRUE) |>
+      kable_styling(bootstrap_options = c("striped", "hover", "responsive")) |> 
+column_spec(1, bold = TRUE) |>
+  footnote(general = "Les valeurs sont données avec leur intervalle de confiance à 95 %.")
+```
+
+## Critère 2
+*Évaluation de la durée du séjour aux urgences du patient.*
+
+```{r}
+#| label: tbl-crti2
+
+tta <-  left_join(tt,patho, by = "subjid")
+tta <- left_join(tta,finet, by = "subjid")
+```
+
+
+
+tta =  left_join(tt,patho, by = "subjid")
+tta 
 :::
