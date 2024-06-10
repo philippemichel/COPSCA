@@ -45,11 +45,9 @@ tbl-cap-location: top
 classoption: [french]
 papersize: a4
 editor: source
-#bibliography: stat.bib
-#cite-method: biblatex
-#csl: jama.csl
-#reference-location: margin
-#citation-location: margin
+bibliography: stat.bib
+cite-method: biblatex
+csl: jama.csl
 license: "MIT"
 echo: false
 warning: false
@@ -77,6 +75,7 @@ library(visdat)
 library(GGally)
 library(ggridges)
 library(colorspace)
+library(xlsx)
 library(apyramid)
 library(plotly)
 library(plotROC)
@@ -85,7 +84,7 @@ theme_gtsummary_language(language = "fr", decimal.mark = ",")
 options(OutDec = ",")
 #
 load("data/copsca.RData")
-expx <- FALSE
+expx <- TRUE
 classeur <- "copsca1.xls"
 if (expx){system(paste0("rm -f ",classeur))}
 ```
@@ -121,7 +120,8 @@ vvpt <- diagci(vvp, zz[1,1] + zz[1,2])
 vvn <- zz[2,2]/(zz[2,1] + zz[2,2])
 vvnt <- diagci(vvn, zz[2,1] + zz[2,2])
 #
-return(list(ssb = ssbt, ssp = sspt, vvpt = vvpt, vvn = vvnt))
+# return(list(ssb = ssbt, ssp = sspt, vvpt = vvpt, vvn = vvnt))
+return(c(ssb = ssbt, ssp = sspt, vvpt = vvpt, vvn = vvnt))
 }
 ```
 
@@ -133,6 +133,23 @@ difdate <- function(dd1,hh1,dd2,hh2){
   zz2 <- as.numeric(dmy_hms(paste0(dd2," ",hh2)))
   dif <- (zz2 - zz1)/60
   return(dif)
+}
+```
+
+```{r}
+#| label: macro_kbl
+
+tbtib <- function(df,foot,nom,ex){
+    if (ex) {
+      write.xlsx(df,classeur, sheetName = nom, append = TRUE)
+  }
+  
+zz <- df |>
+  kbl(longtable = FALSE, booktabs = TRUE) |>
+  kable_styling(bootstrap_options = c("striped", "hover")) |>
+  column_spec(1, bold = TRUE) |>
+  footnote(general = foot)
+return(zz)
 }
 ```
 
@@ -177,6 +194,7 @@ age_pyramid(age_group = "agerec",
             pal = c("pink", "lightblue"),
 show_midpoint = FALSE) +
 theme_light() +
+    scale_y_continuous(limits = c(-20,20)) +
     labs(title = "Pyramide des âges",
         fill = "Sexe")+ 
     theme(
@@ -223,7 +241,7 @@ type = list(doulh0 ~ "continuous",
 modify_header(label ~ " ") |>
 bold_labels() |>
 pexptabph(nomfich = classeur,
-nomsheet = "atcd1",
+nomsheet = "clinique1",
 exp = expx)
 
 ```
@@ -239,7 +257,7 @@ tbl_summary(missing = "no",
 modify_header(label ~ " ") |>
 bold_labels() |>
 pexptabph(nomfich = classeur,
-nomsheet = "atcd1",
+nomsheet = "antalg1",
 exp = expx)
 ```
 
@@ -254,7 +272,7 @@ tbl_summary(missing = "no",
 modify_header(label ~ " ") |>
 bold_labels() |>
 pexptabph(nomfich = classeur,
-nomsheet = "atcd1",
+nomsheet = "delai1",
 exp = expx)
 ```
 
@@ -262,6 +280,10 @@ exp = expx)
 # Résultats biologiques
 
 Description simple des divers taux de troponine & copeptine.
+
+::: {.callout-warning}
+Tous les graphiques représentant les taux de troponine ou de copeptine sont en échelle logarithmique.
+:::
 
 ```{r}
 #| label: tbl-biol
@@ -274,7 +296,7 @@ tbl_summary(missing = "no",
 modify_header(label ~ " ") |>
 bold_labels() |>
 pexptabph(nomfich = classeur,
-nomsheet = "atcd1",
+nomsheet = "bio1",
 exp = expx)
 ```
 
@@ -455,7 +477,7 @@ axis.title.x = element_text(size = 12),
 axis.title.y = element_text(size = 12))
 ```
 
-Vu le faible nombre de cas dans chaque tranche de copeptine les intervalles de confiance (non représentés) sont énormes. Il semble néanmoins que le dosage de la copeptine serait plus intéressant quand la troponine est basse.  
+Vu le faible nombre de cas dans chaque tranche de copeptine les intervalles de confiance (non représentés) sont énormes. Il semble néanmoins que le dosage de la copeptine a étéit plus intéressant quand la troponine est basse.  
 
 
 ## Valeur du test
@@ -473,19 +495,13 @@ diagx <- tibble(tt_ps, tt_pc, tt_tpcp) |>
 mutate(test = as.factor(c("Sensibilité","Spécificité","VPP","VPN"))) |> 
 relocate(test, .before = tt_ps)
 names(diagx) <- c("Test","Troponine","Copeptine","Troponine + Copeptine")
-
-
-diagx |> 
-   kbl(longtable = FALSE, booktabs = TRUE) |>
-      kable_styling(bootstrap_options = c("striped", "hover")) |> 
-column_spec(1, bold = TRUE) |>
-  footnote(general = "N = 91. Les valeurs sont données avec leur intervalle de confiance à 95 %.")
+tbtib(diagx,"N = 91. Les valeurs sont données avec leur intervalle de confiance à 95 %.","zz",expx)
 ```
 
 ::: {.callout-tip}
 ## Résultat principal
 
-Sur un test de première ligne comme celui-ci (un faux positif sera rapidement corrigé, un faux négatif renvoyé à la maison serait plus gênant) la **sensibilité** est le critère le plus important. Le gain via l'ajout de copeptine semble important. 
+Sur un test de première ligne comme celui-ci (un faux positif a été rapidement corrigé, un faux négatif renvoyé à la maison a étéit plus gênant) la **sensibilité** est le critère le plus important. Le gain via l'ajout de copeptine semble important. 
 :::
 
 ```{r}
@@ -518,7 +534,7 @@ y = "Troponine (pg/mL)") +
 ```{r}
 #| label: fig-ssbcopept
 #| fig-cap: Copeptine H0 selon le diagnostic final
-
+#| fig-scap: la lignes pointillés correspond au seuil
 tt |>
 ggplot() +
 aes(x  = copepth0, fill = sca3) +
@@ -547,14 +563,13 @@ y = "Troponine (pg/mL)") +
 
 ### Seuil optimal Copeptine
 
-Sur notre échantillon le seuil optimal pour la copeptine serait de 11,8 pg/mL. On refait donc les calculs avec ce seuil.
+Sur notre échantillon le seuil optimal calculé pour la copeptine a été de 11,8 pg/mL. On refait donc les calculs avec ce seuil.
 
 ```{r}
 #| label: tbl-diagtot2
 #| tbl-cap: Tests avec seuil optimisé de Copeptine
 
-nnn <- length(tt$copepth0[tt$copepth0>10 & tt$copepth0<11.8])
-
+nnn <- length(tt$copepth0[tt$copepth0>10 & tt$copepth0 < 11.8])
 
 zz <- tt |>
   mutate(cpx = ifelse(copepth0 > 11.8, "yes", "no")) |>
@@ -572,14 +587,7 @@ mutate(test = as.factor(c("Sensibilité","Spécificité","VPP","VPN"))) |>
 relocate(test, .before = tt_ps)
 names(diagx) <- c("Test","Troponine","Copeptine","Troponine + Copeptine")
 
-
-diagx |> 
-   kbl(longtable = FALSE, booktabs = TRUE) |>
-      kable_styling(bootstrap_options = c("striped", "hover")) |> 
-column_spec(1, bold = TRUE) |>
-  footnote(general = "N = 91. Les valeurs sont données avec leur intervalle de confiance à 95 %.")
-
-rm(zz)
+tbtib(diagx,"N = 91. Les valeurs sont données avec leur intervalle de confiance à 95 %.","diagtot2",expx)
 ```
 
 Ce changement de seuil ne modifie la classification que pour `r nnn` patients & n'introduit pas de changement majeur. 
@@ -601,13 +609,8 @@ mutate(test = as.factor(c("Sensibilité","Spécificité","VPP","VPN"))) |>
 relocate(test, .before = tt_pc)
 names(diagx) <- c("Test","Copeptine","Troponine + Copeptine")
 
-diagx |> 
-   kbl(longtable = FALSE, booktabs = TRUE) |>
-      kable_styling(bootstrap_options = c("striped", "hover")) |> 
-column_spec(1, bold = TRUE) |>
-  footnote(general = "N = 91. Les valeurs sont données avec leur intervalle de confiance à 95 %.")
+tbtib(diagx,"N = 91. Les valeurs sont données avec leur intervalle de confiance à 95 %.","tpn",expx)
 
-rm(zz)
 ```
 
 
@@ -670,11 +673,9 @@ hered <- c("Hérédité",ntot, zz[[1]], zz[[2]], zz[[3]], zz[[4]])
 fr <- rbind(fr, pds, hered)
 row.names(fr) <- NULL
 colnames(fr) <- c("Population","N","Sensibilité","Spécificité","VPP","VPN")
-fr |> 
-   kbl(longtable = FALSE, booktabs = TRUE) |>
-      kable_styling(bootstrap_options = c("striped", "hover")) |> 
-column_spec(1, bold = TRUE) |>
-  footnote(general = "Les valeurs sont données avec leur intervalle de confiance à 95 %.")
+
+
+tbtib(fr,"Les valeurs sont données avec leur intervalle de confiance à 95 %.","crit1",expx)
 ```
 
 
@@ -683,6 +684,8 @@ column_spec(1, bold = TRUE) |>
 
 ```{r}
 #| label: tbl-crti2
+#| tbl-cap: Durée du séjour aux urgences
+
 
 var_label(finet$duree_urg) <- "Durée du séjour aux urgences (heures)"
 tt |> 
@@ -696,6 +699,7 @@ nomsheet = "dsej",
 exp = expx)
 ``` 
 
+Aucun des tests ne semble modifier la durée du séjour aux urgences.
 
 ## Critère 3
 *Évolution de l’association des dosages en fonction du délai entre 1ère douleur et prélèvements.*
@@ -718,23 +722,55 @@ aa <- rbind(aa, c("Copeptine",round(zz[[4]],2),ll))
 #
 zz <- as_tibble(aa)
 names(zz) <- c("Dosage à H0","r","p-value")
-zz |> 
-   kbl(longtable = FALSE, booktabs = TRUE) |>
-      kable_styling(bootstrap_options = c("striped", "hover")) 
+
+tbtib(zz,"Tets de corrélation de Spearmann","delai2",expx)
 ```
+
+```{r}
+#| label: fig-delaidos
+#| fig-cap: "Délai douleur-prélèvement selon les dosages"
+
+tta |> 
+  dplyr::select(dd,tropoh0,copepth0) |>
+  pivot_longer(cols = c(tropoh0,copepth0), names_to = "test", values_to = "dosage") |>
+  mutate(test = as.factor(test)) |>
+  ggplot() +
+  aes(y = dd, x = dosage, color = test) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  scale_x_continuous(trans='log10') +
+  #geom_vline(aes(xintercept = 15.6), linetype = "dashed", color = "red") +
+  #geom_vline(aes(xintercept = 34.2), linetype = "dashed", color = "blue") +
+  theme_light() +
+  
+  labs(title = "Délai douleur-prélèvement selon les dosages", 
+       y = "délai douleur-prélèvement",
+       x = "dosage (pg/mL)") +
+  theme(
+    plot.title = element_text(size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 12),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    legend.title = element_blank(),
+    legend.position = "bottom")
+```
+
+
 
 Le délai douleur-prélèvement ne semble influer sur les dosages de troponine ou de copeptine.
 
 
 ## Critère 4
-*Évaluation de l’évolution de la douleur via l’échelle numérique entre l’arrivée aux urgences et la réévaluation à 3 heures*
+*Évaluation de l’évolution de la douleur via l’échelle numérique entre l’arrivée aux urgences et la réévaluation à 3 heures.*
 
 ```{r}
 #| label: tbl-douleur
 #| tbl-cap: Évolution de la douleur
 
-tta |> 
-mutate(ddoul =  doulh3- doulh0) |>
+zz <- tta |> 
+mutate(ddoul =  doulh3 - doulh0)
+var_label(zz$ddoul) <- "Évolution de la douleur (H3-H0)"
+zz |>
 dplyr::select(doulh0, doulh3, ddoul) |>
 tbl_summary(missing = "no", 
 type=list(doulh3~"continuous")) |>
@@ -760,6 +796,7 @@ geom_violin() +
 geom_boxplot(width = 0.1, fill ="grey90") +
 theme_light() +
  scale_fill_discrete_qualitative(palette = "Dark 3") +
+scale_y_continuous(breaks = seq(0,10,2)) +
     labs(title = "Évolution de la douleur") +
     theme(
       plot.title = element_text(size = 16, face = "bold"),
@@ -770,5 +807,65 @@ theme_light() +
       legend.position = "none")
 
 ```
+
+# Plan d'analyse
+
+
+Le risque $\alpha$ retenu a été de 0,05 & la puissance de 0,8. Sauf indication contraires pour les tests simples les variables numériques ont été comparées par analyse de variance (test \textsc{anova}). Un test exact de Fisher a été utilisé pour les variables discrètes.
+
+L'analyse statistique a été réalisée avec le logiciel **R**[@rstat] & divers packages en particulier `tidyverse` [@tidy] & `baseph` [@baseph].
+
+## Nombre de cas
+
+```{r donnees}
+speav <- 0.92 # specificité prévue
+ii <- 0.05 # marge d'erreur
+pmal <- 0.3 # % de malades dans la population
+```
+
+Le premier dosage de la troponine (\< 6 h) a une spécificité connue de `r speav * 100` % en présence de signes cliniques évocateurs.
+
+```{r nbmalades}
+nmal <- (qnorm(0.95)^2 * speav*(1 - speav))/ii^2
+ncas <- nmal/pmal
+ncas <- floor(ncas) + 1
+nmal <- floor(nmal) + 1
+```
+
+Il faudrait donc `r nmal` cas malades (on tolère une marge d'erreur de 5 %).
+
+Au vu de la littérature, on estime le pourcentage de malades à `r pmal*100` dans notre échantillon ce qui monte le total à **`r ncas` sujets** nécessaires.
+
+
+
+## Description de la population
+
+
+Un tableau présentera les valeurs démographiques & clinique pour l'ensemble de la population & pour chaque groupe. Les valeurs numériques ont été présentées en médiane & quartiles, les valeurs discrètes en %. 
+
+
+## Objectif principal
+
+
+Dans un premier temps on va chercher à définir un seuil diagnostic pour la copeptine, le seuil de détection de la troponine étant considéré comme connu. Ce seuil a été défini par l'analyse d'une courbe ROC.
+
+Une fois ce seuil défini, l'association a été testée tout d'abord avec le seuil usuel retenu pour la copeptine puis  avec le seuil retrouvé dans notre échantillon.
+
+## Objectifs secondaires
+
+**Objectif 1** La sensibilité, spécificité, VPP & VPN ont été calculées pour chacun des critères prédictifs retenus. Il ne faut pas oublier que les effectifs des sous groupes ont été très faibles & que les résultats obtenus n'auront qu'une valeur indicative.
+
+**Objectif 2** La durée de séjour des patient a été présentée en médiane avec avec les quantiles pour les groupes positif ou négatif d'après le couple troponine/copeptine.
+
+**Objectif 3** Des corrélations simples ont été réalisée :
+
+- délai douleur/prélèvement & dosage de copeptine,
+- délai douleur/prélèvement & dosage de troponine.
+
+Un test de corrélation non paramétrique de Spearman a été utilisé.
+
+**Objectif 4** L'intensité de la douleur est présentée à H0 & H3 ainsi que son évolution (médiane et quartiles).
+
+
 
 

@@ -8,6 +8,8 @@
 #
 #  ------------------------------------------------------------------------
 
+
+importph <- function(){
 library(tidyverse)
 library(readODS)
 library(labelled)
@@ -40,14 +42,18 @@ demog <- demog |>
   mutate(naisdte = dmy(naisdte)) |>
   mutate(age = as.numeric(incldte - naisdte)/365.25) |>
   relocate(age, .after = "naisdte") |>
-  mutate(imc = bmiph(imc))
+  mutate(imc = bmiph(imc)) |>
+  mutate(imc = fct_recode(imc,
+  "dénutrition/maigreur" = "dénutrition",
+  "dénutrition/maigreur" = "maigreur"
+))
 
 var_label(demog$age) <- "Âge"
 var_label(demog$imc) <- "IMC"
 
 # ATCD
 
-atcd <- atcd |> 
+atcd <- atcd |>
   mutate(tabacon = fct_relevel(tabacon,
     "Aucun", "Actif", "Sevré"))
 
@@ -84,10 +90,10 @@ tt <- left_join(result, demog, by="subjid") |>
   mutate(tp0 = as.factor(tp0)) |>
   mutate(tp0 = fct_relevel(tp0, "yes", "no")) |>
   mutate(cp0 = ifelse(copepth0 > 10, "yes", "no")) |>
-  mutate(cp0 = as.factor(cp0)) |> 
-  mutate(cp0 = fct_relevel(cp0, "yes", "no")) |> 
-  mutate(tpcp0 = ifelse(tp0 == "yes" | cp0 == "yes", "yes", "no")) |> 
-  mutate(tpcp0 = as.factor(tpcp0)) |> 
+  mutate(cp0 = as.factor(cp0)) |>
+  mutate(cp0 = fct_relevel(cp0, "yes", "no")) |>
+  mutate(tpcp0 = ifelse(tp0 == "yes" | cp0 == "yes", "yes", "no")) |>
+  mutate(tpcp0 = as.factor(tpcp0)) |>
   mutate(tpcp0 = fct_relevel(tpcp0, "yes", "no"))
 #
 var_label(tt$tp0) <- "Troponine h0 anormale"
@@ -99,8 +105,9 @@ var_label(tt$sca3) <- "SCA ST-"
 zz1 <- as.numeric(dmy_hms(paste0(finet$sortiurgdte," ",finet$sortiurghr)))
 zz2 <- as.numeric(dmy_hms(paste0(patho$urgencdte," ", patho$urgenhr)))
 zz <- (zz1 - zz2)/3600
-finet <- finet |> 
+finet <- finet |>
   mutate(duree_urg = zz)
 
 #
 save(atcd, demog, finet, patho, tt, file="data/copsca.RData")
+}
