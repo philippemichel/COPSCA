@@ -16,9 +16,9 @@
 
 04/04/2024 **Plan d'analyse** avec calcul du nombre de cas.
 
-10/05/2024 **Rapport final** avec analyse statistique (V1 finie) :
+16/06/2024 **Rapport final** avec analyse statistique (V1.1) :
 
  -  **rapport_copsca_1.qmd** : version  `html`
- -  **rapport_1.pdf** : version `pdf`
+ -  **rapport_stat_1p.qmd** : version `pdf`
   
 
