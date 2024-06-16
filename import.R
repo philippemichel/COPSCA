@@ -108,6 +108,15 @@ zz <- (zz1 - zz2)/3600
 finet <- finet |>
   mutate(duree_urg = zz)
 
+tt <- left_join(tt, finet, by="subjid") |>
+mutate(scanonston =
+  fct_relevel(scanonston,
+    "Yes", "no"
+  ))
+
 #
 save(atcd, demog, finet, patho, tt, file="data/copsca.RData")
 }
+
+importph()
+load("data/copsca.RData")
