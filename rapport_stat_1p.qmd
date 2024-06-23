@@ -21,7 +21,7 @@ titlepage-theme:
 include-in-header:
    text: |
     \definecolor{novo}{HTML}{27484b}
-    \usepackage[locale = FR]{siunitx}
+    \usepackage[locale = FR, per-mode = symbol]{siunitx}
     \usepackage[section]{placeins}
     \usepackage{arsenal}
 df-print : kable
@@ -47,7 +47,7 @@ license: "MIT"
 echo: false
 warning: false
 message: false
-cache: false
+cache: true
 fig-responsive: true
 ---
 
@@ -78,9 +78,11 @@ theme_gtsummary_language(language = "fr", decimal.mark = ",")
 options(OutDec = ",")
 #
 load("data/copsca.RData")
-expx <- TRUE
-classeur <- "copsca1_1.xls"
+expx <- FALSE
+classeur <- "copsca1_2.xls"
 if (expx){system(paste0("rm -f ",classeur))}
+#
+cat <- list(all_categorical() ~ "{n}/{N} ({p})")
 ```
 
 ```{r}
@@ -144,9 +146,7 @@ L'échantillon comporte cas mais le résultat final (variable `scanonston`) n'ai
 demog |>
 dplyr::select(4:8) |>
 tbl_summary(missing = "no", 
-  #         type = list(pc_cm ~ "continuous", 
-  #                      naisstermsa ~ "continuous"),
-            statistic = list(all_categorical() ~ "{n}/{N} ({p})")) |>
+            statistic = cat) |>
 modify_header(label ~ " ") |>
 bold_labels() |>
 pexptabph(nomfich = classeur,
@@ -172,6 +172,7 @@ show_midpoint = FALSE) +
 theme_light() +
     labs(title = "Pyramide des âges",
         fill = "Sexe")+ 
+  scale_y_continuous(limits = c(-20,20)) +
     theme(
       plot.title = element_text(size = 16, face = "bold"),
       plot.subtitle = element_text(size = 12),
@@ -195,7 +196,8 @@ dplyr::select(!1) |>
 tbl_summary(missing = "no", 
   #         type = list(pc_cm ~ "continuous", 
   #                      naisstermsa ~ "continuous"),
-            statistic = list(all_categorical() ~ "{n}/{N} ({p})")) |>
+            statistic = cat,
+      value = list(1:8 ~ "Oui")) |>
 modify_header(label ~ " ") |>
 bold_labels() |>
 pexptabph(nomfich = classeur,
@@ -214,7 +216,8 @@ dplyr::select(6,7,10:15) |>
 tbl_summary(missing = "no",
 type = list(doulh0 ~ "continuous",
             doulh3 ~ "continuous"),
-            statistic = list(all_categorical() ~ "{n}/{N} ({p})")) |>
+value = list(c(1,4:8) ~ "Oui"),
+            statistic = cat) |>
 modify_header(label ~ " ") |>
 bold_labels() |>
 pexptabph(nomfich = classeur,
@@ -229,14 +232,15 @@ exp = expx)
 
 zz <- patho |>
 dplyr::select(16:22) |>
-mutate(ainson = factor(ainson, levels = c("no", "yes")),
-       paracetcodon = factor(paracetcodon, levels = c("no", "yes"))) 
+mutate(ainson = factor(ainson, levels = c("Non", "Oui")),
+       paracetcodon = factor(paracetcodon, levels = c("Non", "Oui"))) 
   var_label(zz$ainson) <- "AINS"
   var_label(zz$paracetcodon) <- "Paracétamol + codéine"
   #
 zz |> 
   tbl_summary(missing = "no",
-            statistic = list(all_categorical() ~ "{n}/{N} ({p})")) |>
+              value = list(everything() ~ "Oui"),
+            statistic = cat) |>
 modify_header(label ~ " ") |>
 bold_labels() |>
 pexptabph(nomfich = classeur,
@@ -251,7 +255,7 @@ exp = expx)
 patho |>
 dplyr::select(23:24) |>
 tbl_summary(missing = "no",
-            statistic = list(all_categorical() ~ "{n}/{N} ({p})")) |>
+            statistic = cat) |>
 modify_header(label ~ " ") |>
 bold_labels() |>
 pexptabph(nomfich = classeur,
@@ -270,7 +274,7 @@ Description simple des divers taux de troponine & copeptine.
 tt |>
 dplyr::select(4,5,8) |>
 tbl_summary(missing = "no",
-            statistic = list(all_categorical() ~ "{n}/{N} ({p})")) |>
+            statistic = cat) |>
 modify_header(label ~ " ") |>
 bold_labels() |>
 pexptabph(nomfich = classeur,
@@ -287,22 +291,51 @@ ggplot() +
 aes(x = tropoh0, fill = sex) +
 geom_density(alpha = 0.5) +
 scale_x_continuous(trans='log10') +
-geom_vline(aes(xintercept = 15.6), linetype = "dashed", color = "red") +
-geom_vline(aes(xintercept = 34.2), linetype = "dashed", color = "blue") +
+geom_vline(aes(xintercept = 15.6), linetype = "dotdash", color = "red", alpha = 0.6) +
+geom_vline(aes(xintercept = 34.2), linetype = "dotdash", color = "blue", alpha = 0.6) +
 theme_light() +
 
     labs(title = "Troponine à H0",
         fill = "Sexe",
 x = "pg/mL", 
-y = "n")+ 
+)+ 
+    theme(
+      plot.title = element_text(size = 16, face = "bold"),
+      plot.subtitle = element_text(size = 12),
+      axis.title.x = element_text(size = 12),
+      axis.title.y = element_blank(),
+            axis.text.y = element_blank(),
+      legend.title = element_blank(),
+      legend.position = "right")
+```
+
+```{r}
+#| label: fig-tropoh0b
+#| fig-cap: Troponine à H0
+tt |> 
+ggplot() +
+aes(x =sex, y = tropoh0, fill = sex) +
+  scale_y_continuous(trans='log10') +
+geom_violin() +
+geom_boxplot(width = 0.2, fill = "grey90") +
+  geom_hline(aes(yintercept = 15.6), linetype = "dotdash", color = "red", alpha = 0.6) +
+geom_hline(aes(yintercept = 34.2), linetype = "dotdash", color = "blue", alpha = 0.6) +
+  theme_light() +
+
+    labs(title = "Troponine à H0",
+        x = "Sexe",
+y = "pg/mL", 
+)+ 
     theme(
       plot.title = element_text(size = 16, face = "bold"),
       plot.subtitle = element_text(size = 12),
       axis.title.x = element_text(size = 12),
       axis.title.y = element_text(size = 12),
       legend.title = element_blank(),
-      legend.position = "bottom")
+      legend.position = "none")
 ```
+
+
 
 ```{r}
 #| label: fig-cpt0
@@ -313,20 +346,46 @@ ggplot() +
 aes(x = copepth0, fill = sex) +
 geom_density(alpha = 0.5) +
 scale_x_continuous(trans='log10') +
-geom_vline(aes(xintercept = 10), linetype = "dashed", color = "black")  +
+geom_vline(aes(xintercept = 10), linetype = "dotdash", color = "black", alpha = 0.6)  +
 theme_light() +
     labs(title = "copeptine à H0",
         fill = "Sexe",
-x = "pg/mL", 
-y = "n")+ 
+x = "pg/mL")+ 
 scale_fill_discrete_qualitative(palette = "Dark 3") +
+    theme(
+      plot.title = element_text(size = 16, face = "bold"),
+      plot.subtitle = element_text(size = 12),
+      axis.title.x = element_text(size = 12),
+      axis.title.y = element_blank(),
+            axis.text.y = element_blank(),
+      legend.title = element_blank(),
+      legend.position = "right")
+```
+
+
+```{r}
+#| label: fig-cpt0b
+#| fig-cap: Copeptine à H0
+tt |> 
+ggplot() +
+aes(x =sex, y = copepth0, fill = sex) +
+  scale_y_continuous(trans='log10') +
+geom_violin() +
+geom_boxplot(width = 0.2, fill = "grey90") +
+geom_vline(aes(xintercept = 10), linetype = "dotdash", color = "black", alpha = 0.6)  +
+  theme_light() +
+
+    labs(title = "copeptine à H0",
+        x = "Sexe",
+y = "pg/mL", 
+)+ 
     theme(
       plot.title = element_text(size = 16, face = "bold"),
       plot.subtitle = element_text(size = 12),
       axis.title.x = element_text(size = 12),
       axis.title.y = element_text(size = 12),
       legend.title = element_blank(),
-      legend.position = "bottom")
+      legend.position = "none")
 ```
 
 ## Corrélation entre la copeptine et la troponine
@@ -386,6 +445,8 @@ Vu avec le laboratoire de l'hôpital les valeurs seuil au 99e percentile sont le
 - supérieur à \qty{15.6}{\pg\per\ml} pour les femmes 
 - supérieur à \qty{34.2}{\pg\per\ml} pour les hommes
 
+Le daignostic final a été SCAS ST- pour 10 patients.
+
 
 ## Recheche d'un seuil pour la copeptine
 
@@ -397,7 +458,7 @@ Dans un premier temps, nous avons cherché un seuil pour la copeptine sans tenir
 #| fig-asp: 1
 
 zz <- tt |>
-mutate(scanonston = ifelse(scanonston == "Yes", 1, 0)) |>
+mutate(scanonston = ifelse(scanonston == "Oui", 1, 0)) |>
 ggplot() +
 aes(d = scanonston, m = copepth0) +
 geom_roc() +
@@ -441,7 +502,7 @@ mutate(tp0 =  cut(tropoh0,
   breaks = c(0, 5, 20, 40,1000),
   labels = c("Normale","6-20", "21-40", ">40"))) |> 
 mutate(tp0 = as.factor(tp0)) |>
-mutate(scanonston = ifelse(scanonston == "Yes", 1, 0)) |>
+mutate(scanonston = ifelse(scanonston == "Oui", 1, 0)) |>
 ggplot() +
 aes(d = sca3, m = copepth0, color = tp0) +
 geom_roc() +
@@ -496,51 +557,99 @@ tt |>
 ggplot() +
 aes(x  = tropoh0, fill = scanonston) +
 geom_density(alpha = 0.5) +
-geom_vline(aes(xintercept = 15.6), linetype = "dashed", color = "red") +
-geom_vline(aes(xintercept = 34.2), linetype = "dashed", color = "blue") +
+geom_vline(aes(xintercept = 15.6), linetype = "dotdash", color = "red") +
+geom_vline(aes(xintercept = 34.2), linetype = "dotdash", color = "blue") +
 scale_x_continuous(trans='log10') +
 theme_light() +
     labs(title = "Troponine H0 selon le diagnostic final",
        fill = "SCA ST -",
-x = "copeptine (pg/mL)", 
-y = "Troponine (pg/mL)") +
+x = "troponine (pg/mL)", ) +
+    theme(
+      plot.title = element_text(size = 16, face = "bold"),
+      plot.subtitle = element_text(size = 12),
+      axis.title.x = element_text(size = 12),
+      axis.title.y = element_blank(),
+            axis.text.y = element_blank(),
+      legend.title = element_text(size = 12),
+      legend.position = "right")
+```
+
+```{r}
+#| label: fig-ssbtropo0b
+#| fig-cap: tropo H0 selon le diagnostic final
+tt |> 
+ggplot() +
+aes(x =scanonston, y = tropoh0, fill = sex) +
+  scale_y_continuous(trans='log10') +
+geom_boxplot() +
+  geom_hline(aes(yintercept = 15.6), linetype = "dotdash", color = "red", alpha = 0.6) +
+geom_hline(aes(yintercept = 34.2), linetype = "dotdash", color = "blue", alpha = 0.6) +
+  theme_light() +
+ scale_x_discrete(labels = c("Oui", "Non")) +
+    labs(title = "Troponine H0 selon le diagnostic final",
+        x = "SCA non ST -",
+y = "pg/mL", 
+)+ 
     theme(
       plot.title = element_text(size = 16, face = "bold"),
       plot.subtitle = element_text(size = 12),
       axis.title.x = element_text(size = 12),
       axis.title.y = element_text(size = 12),
-      legend.title = element_text(size = 12),
-      legend.position = "bottom")
-
-
+      legend.title = element_blank(),
+      legend.position = "right")
 ```
 
+
 ```{r}
-#| label: fig-ssbcopept
+#| label: fig-ssbcopt0
 #| fig-cap: Copeptine H0 selon le diagnostic final
 
 tt |>
 ggplot() +
 aes(x  = copepth0, fill = scanonston) +
 geom_density(alpha = 0.5) +
-geom_vline(aes(xintercept = 10), linetype = "dashed", color = "black") +
+geom_vline(aes(xintercept = 10), linetype = "dotdash", color = "black") +
 scale_x_continuous(trans='log10') +
 theme_light() +
-scale_fill_discrete_qualitative(palette = "Dark 3") +    
-labs(title = "Copeptine H0 selon le diagnostic final",
+    labs(title = "Copeptine H0 selon le diagnostic final",
        fill = "SCA ST -",
-x = "copeptine (pg/mL)", 
-y = "Troponine (pg/mL)") +
+x = "copeptine (pg/mL)", ) +
+    theme(
+      plot.title = element_text(size = 16, face = "bold"),
+      plot.subtitle = element_text(size = 12),
+      axis.title.x = element_text(size = 12),
+      axis.text.y = element_blank(),
+      axis.title.y = element_blank(),
+      legend.title = element_text(size = 12),
+      legend.position = "right")
+```
+
+```{r}
+#| label: fig-ssbcopt0b
+#| fig-cap: Copeptine H0 selon le diagnostic final
+tt |> 
+ggplot() +
+aes(x =scanonston, y = copepth0, fill = scanonston) +
+  scale_y_continuous(trans='log10') +
+geom_boxplot() +
+  geom_hline(aes(yintercept = 10), linetype = "dotdash", color = "black", alpha = 0.6)  +
+  theme_light() +
+ scale_x_discrete(labels = c("Oui", "Non")) +
+    labs(title = "Copeptine H0 selon le diagnostic final",
+        x = "SCA non ST -",
+y = "pg/mL", 
+)+ 
     theme(
       plot.title = element_text(size = 16, face = "bold"),
       plot.subtitle = element_text(size = 12),
       axis.title.x = element_text(size = 12),
       axis.title.y = element_text(size = 12),
-      legend.title = element_text(size = 12),
-      legend.position = "bottom")
-
-
+      legend.title = element_blank(),
+      legend.position = "none")
 ```
+
+
+
 
 ##  Recherche des meilleurs seuils.
 
@@ -561,7 +670,7 @@ On peut s'intéresser aux patients avec une troponine normale vu la @fig-roc_cop
 #| tbl-cap: Patient avec troponine normale
 
 zz <- tt |> 
-dplyr::filter(tp0 == "no")
+dplyr::filter(tp0 == "Non")
 tt_pc = diagph(zz$cp0, zz$scanonston)
 tt_tpcp = diagph(zz$tpcp0, zz$scanonston)
 diagx <- tibble(tt_pc, tt_tpcp) |> 
@@ -612,21 +721,21 @@ tabac <- c("Tabagisme",ntot, zz[[1]], zz[[2]], zz[[3]], zz[[4]])
 fr <- rbind(fr, tabac)
 #
 ttn <- tta |> 
-dplyr::filter(htaon == "yes")
+dplyr::filter(htaon == "Oui")
 zz <- diagph(ttn$tpcp0, ttn$scanonston)
 ntot <- nrow(ttn)
 hta <- c("HTA",ntot, zz[[1]], zz[[2]], zz[[3]], zz[[4]])
 fr <- rbind(fr, hta)
 #
 ttn <- tta |> 
-dplyr::filter(cardiopathon == "yes")
+dplyr::filter(cardiopathon == "Oui")
 zz <- diagph(ttn$tpcp0, ttn$scanonston)
 ntot <- nrow(ttn)
 cv <- c("Cardiopathie ischémique",ntot, zz[[1]], zz[[2]], zz[[3]], zz[[4]])
 fr <- rbind(fr, cv)
 #
 ttn <- tta |> 
-dplyr::filter(surpdson == "yes")
+dplyr::filter(surpdson == "Oui")
 zz <- diagph(ttn$tpcp0, ttn$scanonston)
 ntot <- nrow(ttn)
 pds <- c("Surpoids",ntot, zz[[1]], zz[[2]], zz[[3]], zz[[4]])
@@ -634,14 +743,14 @@ fr <- rbind(fr, pds)
 #
 
 ttn <- tta |> 
-dplyr::filter(diabeton == "yes")
+dplyr::filter(diabeton == "Oui")
 zz <- diagph(ttn$tpcp0, ttn$scanonston)
 ntot <- nrow(ttn)
 diab <- c("Diabète",ntot, zz[[1]], zz[[2]], zz[[3]], zz[[4]])
 fr <- rbind(fr, diab)
 #
 ttn <- tta |> 
-dplyr::filter(cardiopatfamilion == "yes")
+dplyr::filter(cardiopatfamilion == "Oui")
 zz <- diagph(ttn$tpcp0, ttn$scanonston)
 ntot <- nrow(ttn)
 hered <- c("Hérédité",ntot, zz[[1]], zz[[2]], zz[[3]], zz[[4]])
@@ -753,10 +862,16 @@ theme_light() +
 
 # Technique
 
+::: {.callout-important}
+Pour toutes les figures comportant des taux de Troponine ou de copeptine les axes des ordonnées sont en échelle logarithmique.
+
+Pour les graphiques en densité (@fig-tropoh0 par ex.), l'échelle des ordonnées est arbitraire & a donc été omise.
+:::
+
 Vu la petite taille de l'échantillon aucune hypothèse de normalité n'a été faite.
 
 Les données démographiques on été décrites par la médiane & les quartiles pour les données numériques, en pourcentage pour les données catégorielles.
-Un  test exact de Fisher a été utilisé pour les comparaisons entre données catégorielles en particulier pour les comparaisons de sensiblités. Les données numériques ont été comparées par le test de Wilcoxon. Les corrélations ont été testées par la méthode des rangs de Spearman.
+Un  test exact de Fisher a été utilisé pour les comparaisons entre données catégorielles en particulier pour les comparaisons des sensiblités, spécifictésn VPP & VPN. Les données numériques ont été comparées par le test de Wilcoxon. Les corrélations ont été testées par la méthode des rangs de Spearman.
 
 La recherche de seuils prédictifs pour les différents dosages ont été faites par la création de courbes ROC & le calcul des aires sous la courbe (AUC).
 

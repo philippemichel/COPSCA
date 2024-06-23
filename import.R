@@ -76,25 +76,26 @@ var_label(patho$urg_h3) <- "Délai urgences-évaluation h3 (min)"
 
 # Résultats
 
+
+
 tt <- left_join(result, demog, by="subjid") |>
-  mutate(sca3  = ifelse((tropoh3> 34.2 & sex == "Masculin") |(tropoh3> 15.6 & sex == "Féminin") ,"yes","no")) |>
+  mutate(sca3  = ifelse((tropoh3> 34.2 & sex == "Masculin") |(tropoh3> 15.6 & sex == "Féminin") ,"Oui","Non")) |>
   mutate(sca3 = as.factor(sca3)) |>
-  mutate(sca3 = fct_relevel(sca3,"yes", "no")) |>
+  mutate(sca3 = fct_relevel(sca3,"Oui", "Non")) |>
   drop_na(sca3) |>
   mutate(tp0 = ifelse((tropoh0 > 15.6 &
                          sex == "Féminin") |
                         (tropoh0 > 34.2 & sex == "Masculin"),
-                      "yes",
-                      "no"
+                      "Oui","Non"
   )) |>
   mutate(tp0 = as.factor(tp0)) |>
-  mutate(tp0 = fct_relevel(tp0, "yes", "no")) |>
-  mutate(cp0 = ifelse(copepth0 > 10, "yes", "no")) |>
+  mutate(tp0 = fct_relevel(tp0, "Oui","Non")) |>
+  mutate(cp0 = ifelse(copepth0 > 10, "Oui","Non")) |>
   mutate(cp0 = as.factor(cp0)) |>
-  mutate(cp0 = fct_relevel(cp0, "yes", "no")) |>
-  mutate(tpcp0 = ifelse(tp0 == "yes" | cp0 == "yes", "yes", "no")) |>
+  mutate(cp0 = fct_relevel(cp0, "Oui","Non")) |>
+  mutate(tpcp0 = ifelse(tp0 == "Oui" | cp0 == "Oui", "Oui", "Non")) |>
   mutate(tpcp0 = as.factor(tpcp0)) |>
-  mutate(tpcp0 = fct_relevel(tpcp0, "yes", "no"))
+  mutate(tpcp0 = fct_relevel(tpcp0, "Oui","Non"))
 #
 var_label(tt$tp0) <- "Troponine h0 anormale"
 var_label(tt$cp0) <- "Copeptine h0 anormale"
@@ -108,15 +109,17 @@ zz <- (zz1 - zz2)/3600
 finet <- finet |>
   mutate(duree_urg = zz)
 
+sc <- which(finet$scaston == "Oui")
+finet$scanonston[sc] <- "Oui"
+
 tt <- left_join(tt, finet, by="subjid") |>
 mutate(scanonston =
   fct_relevel(scanonston,
-    "Yes", "no"
-  ))
-
+    "Oui", "Non"))
 #
 save(atcd, demog, finet, patho, tt, file="data/copsca.RData")
 }
+
 
 importph()
 load("data/copsca.RData")
