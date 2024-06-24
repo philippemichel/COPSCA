@@ -1,6 +1,6 @@
 ---
 title: "COP-SCA"
-subtitle: "Rapport Statistique - V 1.1"
+subtitle: "Rapport Statistique - V 1.2"
 author: "D\\textsuperscript{r} Philippe \\textsc{Michel} -- USCR, Hôpital NOVO"
 format:
  titlepage-pdf:
@@ -47,8 +47,7 @@ license: "MIT"
 echo: false
 warning: false
 message: false
-cache: true
-fig-responsive: true
+cache: false
 ---
 
 ```{r}
@@ -78,8 +77,8 @@ theme_gtsummary_language(language = "fr", decimal.mark = ",")
 options(OutDec = ",")
 #
 load("data/copsca.RData")
-expx <- FALSE
-classeur <- "copsca1_2.xls"
+expx <- TRUE
+classeur <- "copsca1_4.xls"
 if (expx){system(paste0("rm -f ",classeur))}
 #
 cat <- list(all_categorical() ~ "{n}/{N} ({p})")
@@ -143,15 +142,23 @@ L'échantillon comporte cas mais le résultat final (variable `scanonston`) n'ai
 #| label: tbl-demog
 #| tbl-cap: Données démographiques
 
+
 demog |>
-dplyr::select(4:8) |>
-tbl_summary(missing = "no", 
-            statistic = cat) |>
-modify_header(label ~ " ") |>
-bold_labels() |>
-pexptabph(nomfich = classeur,
-nomsheet = "demog1",
-exp = expx) 
+  left_join(finet, by = "subjid") |>
+  drop_na(scanonston) |>
+  dplyr::select(4:8, scanonston) |>
+  tbl_summary(missing = "no",
+              by = scanonston,
+              statistic = cat,
+  ) |>
+  modify_header(label ~ " ") |>
+   modify_spanning_header(c("stat_1","stat_2")~ "**SCA ST-**") |> 
+  bold_labels() |>
+  add_overall() |>
+  add_p() |>
+  pexptabph(nomfich = classeur,
+            nomsheet = "demog1",
+            exp = expx) 
 ```
 
 ```{r}
@@ -192,14 +199,18 @@ theme_light() +
 #| tbl-cap: Antécédents
 
 atcd |>
-dplyr::select(!1) |>
+    left_join(finet, by = "subjid") |> 
+  drop_na(scanonston) |>
+dplyr::select(2:11,scanonston) |>
 tbl_summary(missing = "no", 
-  #         type = list(pc_cm ~ "continuous", 
+            by = scanonston,
   #                      naisstermsa ~ "continuous"),
-            statistic = cat,
-      value = list(1:8 ~ "Oui")) |>
+            statistic = cat) |>
 modify_header(label ~ " ") |>
+   modify_spanning_header(c("stat_1","stat_2")~ "**SCA ST-**") |> 
 bold_labels() |>
+    add_overall() |>
+  add_p() |>
 pexptabph(nomfich = classeur,
 nomsheet = "atcd1",
 exp = expx)
@@ -212,18 +223,23 @@ exp = expx)
 #| tbl-cap: Tableau clinique
 
 patho |>
-dplyr::select(6,7,10:15) |>
-tbl_summary(missing = "no",
-type = list(doulh0 ~ "continuous",
-            doulh3 ~ "continuous"),
-value = list(c(1,4:8) ~ "Oui"),
-            statistic = cat) |>
-modify_header(label ~ " ") |>
-bold_labels() |>
-pexptabph(nomfich = classeur,
-nomsheet = "clin1",
-exp = expx)
-
+  left_join(finet, by = "subjid") |>
+  drop_na(scanonston) |>
+  dplyr::select(6, 7, 10:15, scanonston) |>
+  tbl_summary(
+    missing = "no",
+    by = scanonston,
+    type = list(doulh0 ~ "continuous", doulh3 ~ "continuous"),
+    statistic = cat
+  ) |>
+  modify_header(label ~ " ") |>
+   modify_spanning_header(c("stat_1","stat_2")~ "**SCA ST-**") |> 
+  add_overall() |>
+  add_p() |>
+  bold_labels() |>
+  pexptabph(nomfich = classeur,
+            nomsheet = "clin",
+            exp = expx)
 ```
 
 ```{r}
@@ -231,7 +247,9 @@ exp = expx)
 #| tbl-cap: Traitements antalgiques reçus
 
 zz <- patho |>
-dplyr::select(16:22) |>
+    left_join(finet, by = "subjid") |>
+  drop_na(scanonston) |>
+dplyr::select(16:22,scanonston) |>
 mutate(ainson = factor(ainson, levels = c("Non", "Oui")),
        paracetcodon = factor(paracetcodon, levels = c("Non", "Oui"))) 
   var_label(zz$ainson) <- "AINS"
@@ -239,10 +257,14 @@ mutate(ainson = factor(ainson, levels = c("Non", "Oui")),
   #
 zz |> 
   tbl_summary(missing = "no",
+                 by = scanonston,
               value = list(everything() ~ "Oui"),
             statistic = cat) |>
 modify_header(label ~ " ") |>
+   modify_spanning_header(c("stat_1","stat_2")~ "**SCA ST-**") |> 
 bold_labels() |>
+    add_overall() |>
+  add_p() |>
 pexptabph(nomfich = classeur,
 nomsheet = "antalg1",
 exp = expx)
@@ -253,10 +275,16 @@ exp = expx)
 #| tbl-cap: Délais
 
 patho |>
-dplyr::select(23:24) |>
+      left_join(finet, by = "subjid") |>
+  drop_na(scanonston) |>
+dplyr::select(23:24, scanonston) |>
 tbl_summary(missing = "no",
+             by = scanonston,
             statistic = cat) |>
 modify_header(label ~ " ") |>
+      add_overall() |>
+   modify_spanning_header(c("stat_1","stat_2")~ "**SCA ST-**") |> 
+  add_p() |>
 bold_labels() |>
 pexptabph(nomfich = classeur,
 nomsheet = "delai1",
@@ -272,11 +300,15 @@ Description simple des divers taux de troponine & copeptine.
 #| tbl-cap: Biologie
 
 tt |>
-dplyr::select(4,5,8) |>
+dplyr::select(4,5,8, scanonston) |>
 tbl_summary(missing = "no",
+            by = scanonston,
             statistic = cat) |>
 modify_header(label ~ " ") |>
+  modify_spanning_header(c("stat_1","stat_2")~ "**SCA ST-**") |> 
 bold_labels() |>
+        add_overall() |>
+  add_p() |>
 pexptabph(nomfich = classeur,
 nomsheet = "bio1",
 exp = expx)

@@ -138,13 +138,16 @@ L'échantillon comporte `r nrow(demog)` cas.
 #| tbl-cap: Données démographiques
 
 demog |>
-dplyr::select(4:8) |>
+  left_join(finet, by = "subjid") |> 
+  drop_na(diagf) |>
+dplyr::select(4:8, diagf) |>
 tbl_summary(missing = "no", 
-  #         type = list(pc_cm ~ "continuous", 
-  #                      naisstermsa ~ "continuous"),
+by = diagf,
             statistic = list(all_categorical() ~ "{n}/{N} ({p})")) |>
 modify_header(label ~ " ") |>
 bold_labels() |>
+  add_overall() |>
+  add_p() |>
 pexptabph(nomfich = classeur,
 nomsheet = "demog1",
 exp = expx) 
@@ -188,13 +191,17 @@ ggplotly(ff)
 #| tbl-cap: Antécédents
 
 atcd |>
-dplyr::select(!1) |>
+    left_join(finet, by = "subjid") |> 
+  drop_na(diagf) |>
+dplyr::select(2:11,diagf) |>
 tbl_summary(missing = "no", 
-  #         type = list(pc_cm ~ "continuous", 
+            by = diagf,
   #                      naisstermsa ~ "continuous"),
             statistic = list(all_categorical() ~ "{n}/{N} ({p})")) |>
 modify_header(label ~ " ") |>
 bold_labels() |>
+    add_overall() |>
+  add_p() |>
 pexptabph(nomfich = classeur,
 nomsheet = "atcd1",
 exp = expx)
@@ -207,12 +214,17 @@ exp = expx)
 #| tbl-cap: Tableau clinique
 
 patho |>
-dplyr::select(6,7,10:15) |>
+      left_join(finet, by = "subjid") |> 
+  drop_na(diagf) |>
+dplyr::select(6,7,10:15, diagf) |>
 tbl_summary(missing = "no",
+            by = diagf,
 type = list(doulh0 ~ "continuous",
             doulh3 ~ "continuous"),
             statistic = list(all_categorical() ~ "{n}/{N} ({p})")) |>
 modify_header(label ~ " ") |>
+      add_overall() |>
+  add_p() |>
 bold_labels() |>
 pexptabph(nomfich = classeur,
 nomsheet = "atcd1",
@@ -225,16 +237,21 @@ exp = expx)
 #| tbl-cap: Traitements antalgiques reçus
 
 zz <- patho |>
-dplyr::select(16:22) |>
+dplyr::select(1,16:22) |>
 mutate(ainson = factor(ainson, levels = c("no", "yes")),
        paracetcodon = factor(paracetcodon, levels = c("no", "yes"))) 
   var_label(zz$ainson) <- "AINS"
   var_label(zz$paracetcodon) <- "Paracétamol + codéine"
   #
 zz |> 
+        left_join(finet, by = "subjid") |> 
+  drop_na(diagf) |>
   tbl_summary(missing = "no",
+              by = diagf,
             statistic = list(all_categorical() ~ "{n}/{N} ({p})")) |>
 modify_header(label ~ " ") |>
+bold_labels() |>
+    add_p() |>
 bold_labels() |>
 pexptabph(nomfich = classeur,
 nomsheet = "atcd1",
