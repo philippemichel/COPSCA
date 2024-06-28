@@ -1,6 +1,6 @@
 ---
 title: "COP-SCA"
-subtitle: "Rapport Statistique - V 1.2"
+subtitle: "Rapport Statistique - V 1.3"
 author: "D\\textsuperscript{r} Philippe \\textsc{Michel} -- USCR, Hôpital NOVO"
 format:
  titlepage-pdf:
@@ -274,21 +274,45 @@ exp = expx)
 #| label: tbl-delais
 #| tbl-cap: Délais
 
-patho |>
-      left_join(finet, by = "subjid") |>
-  drop_na(scanonston) |>
-dplyr::select(23:24, scanonston) |>
-tbl_summary(missing = "no",
-             by = scanonston,
-            statistic = cat) |>
-modify_header(label ~ " ") |>
-      add_overall() |>
-   modify_spanning_header(c("stat_1","stat_2")~ "**SCA ST-**") |> 
+zz <- patho |>
+  left_join(finet, by = "subjid") |>
+  left_join(tt, by = "subjid") |>
+  drop_na(scanonston.x)
+
+hsympt <- as.numeric(dmy_hms(paste0(zz$symptodte, " ", zz$symptohr)))
+hurg <- as.numeric(dmy_hms(paste0(patho$urgencdte, " ", patho$urgenhr)))
+h0 <- as.numeric(dmy_hms(paste0(zz$prelh0dte, " ", zz$prelh0hr)))
+h3 <- as.numeric(dmy_hms(paste0(zz$prelh3dte, " ", zz$prelh3hr)))
+#
+sympth0 <- (h0 - hsympt) / 60
+sympturg <- (hurg - hsympt) / 60
+urg0 <- (h0 - hurg) / 60
+urg3 <- (h3 - hurg) / 60
+
+var_label(sympth0) <- "Symptômes - Évaluation h0"
+var_label(sympturg) <- "Symptômes - Admission urgences"
+var_label(urg0) <- "Admission urgences - Évaluation h0"
+var_label(urg3) <- "Admission urgences - Évaluation h3"
+
+zz |>
+  mutate(
+    sympth0 = sympth0,
+    sympturg = sympturg,
+    urg0 = urg0,
+    urg3 = urg3
+  ) |>
+  dplyr::select(70:73, scanonston.x) |>
+  tbl_summary(missing = "no",
+              by = scanonston.x,
+              statistic = cat) |>
+  modify_header(label ~ "**Délai (min)**") |>
+  add_overall() |>
+  modify_spanning_header(c("stat_1", "stat_2") ~ "**SCA ST-**") |>
   add_p() |>
-bold_labels() |>
-pexptabph(nomfich = classeur,
-nomsheet = "delai1",
-exp = expx)
+  bold_labels() |>
+  pexptabph(nomfich = classeur,
+            nomsheet = "delai1",
+            exp = expx)
 ```
 
 # Résultats biologiques
@@ -300,18 +324,18 @@ Description simple des divers taux de troponine & copeptine.
 #| tbl-cap: Biologie
 
 tt |>
-dplyr::select(4,5,8, scanonston) |>
-tbl_summary(missing = "no",
-            by = scanonston,
-            statistic = cat) |>
-modify_header(label ~ " ") |>
-  modify_spanning_header(c("stat_1","stat_2")~ "**SCA ST-**") |> 
-bold_labels() |>
-        add_overall() |>
+  dplyr::select(4, 5, 8, scanonston) |>
+  tbl_summary(missing = "no",
+              by = scanonston,
+              statistic = cat) |>
+  modify_header(label ~ " ") |>
+  modify_spanning_header(c("stat_1", "stat_2") ~ "**SCA ST-**") |>
+  bold_labels() |>
+  add_overall() |>
   add_p() |>
-pexptabph(nomfich = classeur,
-nomsheet = "bio1",
-exp = expx)
+  pexptabph(nomfich = classeur,
+            nomsheet = "bio1",
+            exp = expx)
 ```
 
 ```{r}
