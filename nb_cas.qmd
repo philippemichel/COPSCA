@@ -1,0 +1,70 @@
+---
+title: "Copeptine - nb de cas"
+Subtitle: "Nombre de cas"
+author: "Philippe MICHEL"
+date: "`r Sys.Date()`"
+lang: fr
+format:
+  pdf:
+    documentclass: scrartcl
+    papersize: a4
+jss-pdf:
+  keep-tex: true
+pdf-engine: lualatex
+keep-tex: true
+number-sections: true
+toc: false
+lof: false
+lot: false
+fig-cap-location: bottom
+tbl-cap-location: top
+classoption: [french]
+papersize: a4
+editor: source
+---
+
+```{r setup, include= FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, cache = FALSE,
+# knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+#
+ fig.width = 7,
+ fig.asp = 0.8,
+ out.width = "100%"
+)
+```
+```{r donnees}
+speav <- 0.92 # specificité prévue
+ii <- 0.05 # marge d'erreur
+pmal <- 0.3 # % de malades dans la population
+```
+
+## Données
+Ce qui nous intéresse est de diagnostiquer les non malades c'est donc la spécificité qui est le marqueur intéressant. 
+
+
+Le premier dosage de la troponine (< 3 h) a une spécificité de `r speav * 100` % en présence de signes cliniques évocateurs. On a fixé la marge d'erreur acceptable `i` à 5 %.
+
+### Nombre de malades
+
+```{r nbmalades}
+nmal <- (qnorm(0.95)^2 * speav*(1 - speav))/ii^2
+ncas <- nmal/pmal
+ncas <- floor(ncas) + 1
+nmal <- floor(nmal) + 1
+```
+Il faudrait donc `r nmal` cas malades.
+
+### Nb de cas
+
+On estime le pourcentage de malades à `r pmal` dans notre échantillon ce qui monte le total à **`r ncas` sujets**.
+
+### Formule utilisée
+
+$$nb_{malades}=\frac{z_{\alpha/2}^2*spe(1-spe)}{i^2}$$
+
+
+avec 
+
+- $z_{\alpha/2}=1.96$ pour $\alpha=0.05$.
+- $spe$ : specificité attendue (92 %)
+- $i$ : marge d'erreur (5 %)    
