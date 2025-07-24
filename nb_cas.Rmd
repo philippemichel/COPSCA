@@ -3,28 +3,13 @@ title: "Copeptine - nb de cas"
 Subtitle: "Nombre de cas"
 author: "Philippe MICHEL"
 date: "`r Sys.Date()`"
+lang: fr
 output:
   pdf_document:
     includes:
-      in_header: tete.tex
     keep_tex: yes
     latex_engine: lualatex
     toc: no
-  prettydoc::html_pretty:
-    theme: caiman
-    highlight: github
-    toc: yes
-  word_document:
-    toc: yes
-  html_notebook:
-    fig_caption: yes
-    theme: spacelab
-  html_document:
-    df_print: paged
-    toc: yes
-    toc_float: 
-       collapsed: false
-    theme: lumen
 editor_options:
   chunk_output_type: console
 ---
@@ -48,7 +33,7 @@ pmal <- 0.3 # % de malades dans la population
 Ce qui nous intéresse est de diagnostiquer les non malades c'est donc la spécificité qui est le marqueur intéressant. 
 
 
-Le premier dosage de la troponine (< 3 h) a une spécificité de `r speav * 100` % en présence de signes cliniques évocateurs.
+Le premier dosage de la troponine (< 3 h) a une spécificité de `r speav * 100` % en présence de signes cliniques évocateurs. On a fixé la marge d'erreur acceptable `i` à 5 %.
 
 ### Nombre de malades
 
@@ -67,3 +52,10 @@ On estime le pourcentage de malades à `r pmal` dans notre échantillon ce qui m
 ### Formule utilisée
 
 $$nb_{malades}=\frac{z_{\alpha/2}^2*spe(1-spe)}{i^2}$$
+
+
+avec 
+
+- $z_{\alpha/2}=1.96$ pour $\alpha=0.05$.
+- $spe$ : specificité attendue (92 %)
+- $i$ : marge d'erreur (5 %)    
