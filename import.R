@@ -55,6 +55,13 @@ importph <- function() {
     mutate(tabacon = fct_relevel(
       tabacon,
       "Aucun", "Actif", "Sevré"
+    )) |>
+    mutate(tabacpa = cut(tabacpa,
+      include.lowest = TRUE,
+      right = FALSE,
+      dig.lab = 4,
+      breaks = c(0, 1, 20, 40, 100),
+      labels = c("0", "1-19", "20-39", "> 39")
     ))
   #
   bn <- read_ods("data/atcd.ods", sheet = 2)
@@ -88,7 +95,7 @@ importph <- function() {
     mutate(sca3 = as.factor(sca3)) |>
     mutate(sca3 = fct_relevel(sca3, "Oui", "Non")) |>
     drop_na(sca3) |>
-    mutate(tp0 = ifelse((tropoh0 > 15.6 & sex == "Féminin") &
+    mutate(tp0 = ifelse((tropoh0 > 15.6 & sex == "Féminin") |
       (tropoh0 > 34.2 & sex == "Masculin"),
     "Oui", "Non"
     )) |>
@@ -113,8 +120,6 @@ importph <- function() {
   finet <- finet |>
     mutate(duree_urg = zz)
 
-  sc <- which(finet$scaston == "Oui")
-  finet$scanonston[sc] <- "Oui"
   #
   bn <- read_ods("data/finet.ods", sheet = 2)
   var_label(finet) <- bn$nom
