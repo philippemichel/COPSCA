@@ -94,13 +94,11 @@ importph <- function() {
     mutate(sca3 = ifelse((tropoh3 > 34.2 & sex == "Masculin") | (tropoh3 > 15.6 & sex == "Féminin"), "Oui", "Non")) |>
     mutate(sca3 = as.factor(sca3)) |>
     mutate(sca3 = fct_relevel(sca3, "Oui", "Non")) |>
-    drop_na(sca3) |>
+    #   drop_na(sca3) |>
     mutate(tp0 = ifelse((tropoh0 > 15.6 & sex == "Féminin") |
       (tropoh0 > 34.2 & sex == "Masculin"),
-    "Oui", "Non"
+    "Élevée", "Normale"
     )) |>
-    mutate(tp0 = as.factor(tp0)) |>
-    mutate(tp0 = fct_relevel(tp0, "Oui", "Non")) |>
     mutate(cp0 = ifelse(copepth0 > 10, "Oui", "Non")) |>
     mutate(cp0 = as.factor(cp0)) |>
     mutate(cp0 = fct_relevel(cp0, "Oui", "Non")) |>
