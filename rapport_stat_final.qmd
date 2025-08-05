@@ -212,14 +212,14 @@ as_kable_extra(longtable = FALSE, booktabs = TRUE) |>
 #| label: tbl-clinique
 #| tbl-cap: Tableau clinique
 
-patho |>
-      left_join(finet, by = "subjid") |> 
+tt |> 
   drop_na(scanonston) |>
 dplyr::select(douleur7on: autredoumon, scanonston) |>
 tbl_summary(missing = "no",
             by = scanonston,
 type = list(doulh0 ~ "continuous",
-            doulh3 ~ "continuous"),
+            doulh3 ~ "continuous",
+            dyspneeon ~ "categorical"),
             statistic = list(all_categorical() ~ "{n}/{N} ({p})")) |>
 modify_header(label ~ " ") |>
 modify_spanning_header(c("stat_1", "stat_2") ~ "**SCA ST-**") |>
@@ -728,12 +728,13 @@ tt |>
 ##Critère 1
 *Évaluation des performances de diagnostiques de l’association troponine / copeptine selon les facteurs de risque cardiovasculaire (âge, tabac, hypertension, antécédents ischémiques cardiaque, surpoids, hérédité)*
     
-Vu les faibles effectifs les résultats suivants sont inutilisables (intervalles de confiance énormes)
+
+Les différents facteurs de risque ne semblent pas influer la valeur du test. 
 
 ```{r}
 #| label: tbl-crti1
 #| tbl-cap: Performance diagnostique selon la population
-#| eval: false
+#| eval: true
 
 fr <- NULL
 #
@@ -757,21 +758,21 @@ tabac <- c("Tabagisme",ntot, zz[[1]], zz[[2]], zz[[3]], zz[[4]])
 fr <- rbind(fr, tabac)
 #
 ttn <- tt |> 
-dplyr::filter(htaon == "yes")
+dplyr::filter(htaon == "Oui")
 zz <- diagph(ttn$tpcp0, ttn$scanonston)
 ntot <- nrow(ttn)
 hta <- c("HTA",ntot, zz[[1]], zz[[2]], zz[[3]], zz[[4]])
 fr <- rbind(fr, hta)
 #
 ttn <- tt |> 
-dplyr::filter(cardiopathon == "yes")
+dplyr::filter(cardiopathon == "Oui")
 zz <- diagph(ttn$tpcp0, ttn$scanonston)
 ntot <- nrow(ttn)
 cv <- c("Cardiopathie ischémique",ntot, zz[[1]], zz[[2]], zz[[3]], zz[[4]])
 fr <- rbind(fr, cv)
 #
 ttn <- tt |> 
-dplyr::filter(surpdson == "yes")
+dplyr::filter(surpdson == "Oui")
 zz <- diagph(ttn$tpcp0, ttn$scanonston)
 ntot <- nrow(ttn)
 pds <- c("Surpoids",ntot, zz[[1]], zz[[2]], zz[[3]], zz[[4]])
@@ -779,14 +780,14 @@ fr <- rbind(fr, pds)
 #
 
 ttn <- tt |> 
-dplyr::filter(diabeton == "yes")
+dplyr::filter(diabeton == "Oui")
 zz <- diagph(ttn$tpcp0, ttn$scanonston)
 ntot <- nrow(ttn)
 diab <- c("Diabète",ntot, zz[[1]], zz[[2]], zz[[3]], zz[[4]])
 fr <- rbind(fr, diab)
 #
 ttn <- tt |> 
-dplyr::filter(cardiopatfamilion == "yes")
+dplyr::filter(cardiopatfamilion == "Oui")
 zz <- diagph(ttn$tpcp0, ttn$scanonston)
 ntot <- nrow(ttn)
 hered <- c("Hérédité",ntot, zz[[1]], zz[[2]], zz[[3]], zz[[4]])
@@ -806,12 +807,9 @@ column_spec(1, bold = TRUE) |>
 
 ```{r}
 #| label: tbl-crti2
-
-var_label(finet$duree_urg) <- "Durée du séjour aux urgences (heures)"
+#| tbl-cap: Évaluation de la durée du séjour aux urgences
 tt |>
-left_join(patho, by = "subjid") |> 
-mutate(total = rep(" ", nrow(tt))) |> 
-tbl_continuous(variable = duree_urg, include = c(total,tp0, cp0,tpcp0)) |> 
+tbl_continuous(variable = duree_urg, include = c(tp0, cp0,tpcp0)) |> 
 
 add_p() |> 
 bold_labels() |> 
@@ -820,23 +818,23 @@ nomsheet = "dsej",
 exp = expx)
 ``` 
 
+Le temps passé aux urgences ne semble pas lié aux résultats des divers marqueurs. 
+
 ## Critère 3
 *Évolution de l’association des dosages en fonction du délai entre 1ère douleur et prélèvements.*
 
 ```{r}
 #| label: tbl-delai2
 #| tbl-cap: Dosage vs délai douleur-prélèvement
-#| eval: false
-
-tta <- left_join(tt,patho, by = "subjid")
-tta$dd = difdate(tta$symptodte, tta$symptohr, tta$prelh0dte, tta$prelh0hr)
+#| eval: true
 
 aa <- NULL
-zz <- cor.test(tta$tropoh0,tta$dd)
+
+zz <- cor.test(tt$tropoh0,tt$doulprev)
 ll <- beaup(zz$p.value,affp= FALSE)
 aa <- rbind(aa, c("Troponine",round(zz[[4]],2),ll))
 #
-zz <- cor.test(tta$copepth0,tta$dd)
+zz <- cor.test(tt$copepth0,tt$doulprev)
 ll <- beaup(zz$p.value,affp= FALSE)
 aa <- rbind(aa, c("Copeptine",round(zz[[4]],2),ll))
 #
@@ -855,10 +853,9 @@ Le délai douleur-prélèvement ne semble influer sur les dosages de troponine o
 ```{r}
 #| label: tbl-douleur
 #| tbl-cap: Évolution de la douleur
-#| eval: false
+#| eval: true
 
-tta |> 
-mutate(ddoul =  doulh3- doulh0) |>
+tt |> 
 dplyr::select(doulh0, doulh3, ddoul) |>
 tbl_summary(missing = "no", 
 type=list(doulh3~"continuous")) |>
@@ -874,7 +871,7 @@ exp = expx)
 #| label: fig-douleur
 #| fig-cap: Évolution de la douleur
 
-patho |> 
+tt |> 
 dplyr::select(subjid, doulh0, doulh3) |> 
 pivot_longer(cols = c(doulh0, doulh3), names_to = "heure", values_to = "douleur") |> 
 mutate(heure = factor(heure, labels = c("H0", "H3"))) |>
