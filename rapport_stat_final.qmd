@@ -1,9 +1,10 @@
 ---
 subtitle: "Rapport statistique V1.0"
-cache: false
+cache: true
 ---
 
 ::: {.panel-tabset}
+
 # Introduction
 
 **Place du dosage copeptine - troponine dans le diagnostic d’élimination des SCA non ST+ dans la prise en charge des douleurs thoraciques non traumatiques en pré et intra hospitalier chez l’adulte.**
@@ -30,6 +31,7 @@ library(baseph)
 library(janitor)
 library(tidyverse)
 library(gtsummary)
+library(ggcorrplot)
 library(kableExtra)
 library(lubridate)
 library(kableExtra)
@@ -38,7 +40,8 @@ library(labelled)
 library(epiDisplay)
 library(visdat)
 library(GGally)
-library(ggridges)
+library(epiR)
+library(plotly)
 library(ggsci)
 library(colorspace)
 library(apyramid)
@@ -46,12 +49,44 @@ library(apyramid)
 library(plotROC)
 #
 theme_gtsummary_language(language = "fr", decimal.mark = ",")
+theme_gtsummary_journal(journal = "jama")
 options(OutDec = ",")
+ptest <- list(all_continuous() ~ "wilcox.test", all_categorical() ~ "chisq.test")
+stt <- list(
+  all_continuous() ~ "{median} ({p25}, {p75})",
+  all_categorical() ~ "{n} ({p}%)"
+)
 #
 load("data/copsca.RData")
 expx <- FALSE
 classeur <- "copsca2.xls"
 if (expx){system(paste0("rm -f ",classeur))}
+#
+oo <- "Oui"
+ouinon <- list(
+  htaon = oo,
+  cardiopathon = oo,
+  trcon = oo,
+  cardiopatfamilion = oo,
+  diabeton = oo,
+  surpdson = oo,
+  dyspneeon = oo,
+  aspirinon = oo,
+  ircon = oo,
+  douleur7on = oo,
+  symptoassoon = oo,
+  dyspneeon = oo,
+  irradbrason = oo,
+  irradmachon = oo,
+  autredoumon = oo,
+  antalgon = oo,
+  paracetamon = oo,
+  paracetcodon = oo,
+  acupanon = oo,
+  morphinon = oo,
+  tramadolon = oo,
+  ainson = oo,
+  termon = oo)
 ```
 
 ```{r}
@@ -99,9 +134,85 @@ difdate <- function(dd1,hh1,dd2,hh2){
   return(dif)
 }
 ```
+## Qualité des données
+
+### Corrélations anormales
+
+```{r}
+#| label: fig-corr
+#| fig-cap: Corrélations internes
+#| eval: true
+zz <- tt |>
+  dplyr::select(!subjid) |>
+  mutate_if(is.factor, as.numeric) |>
+    dplyr::select(!oppositon:tropoon) |> 
+  janitor::remove_constant() |> 
+  janitor::remove_empty() |> 
+  
+  remove_constant()
+zzf <- cor(zz, use = "pairwise.complete.obs")
+ggcorrplot(zzf,
+  type = "lower",
+  method = "square",
+  ggtheme = "theme_light") +
+  labs(title = "Corrélations",
+      subtitle = "",
+      x = "",
+      y = "",
+      caption = "",
+      fill = "") +
+  theme_light() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.subtitle = element_text(size = 12),
+    axis.title.x = element_text(size = 12),
+    legend.title = element_text(size = 12),
+    axis.title.y = element_text(
+      size = 12,
+      angle = 90,
+      vjust = .5
+    ),
+  axis.text.x = element_text(
+      angle = 90,
+      vjust = .5,
+      size = 5),
+  axis.text.y = element_text(size = 5),
+  legend.position = "right"
+  )
+```
+
+On ne met pas en évidence de corrélation anormale ou gênante. 
+
+### Données manquantes
+
+```{r}
+#| label: fig-manq
+#| fig-cap: Données manquantes
+
+tt |>
+  dplyr::select(-c(subjid)) |>
+  vis_dat(palette = "qual")
+
+tt <- tt |>
+  janitor::remove_constant() |>
+  janitor::remove_empty()
+  
+```
+
+Les variables  `embolon`, `oppositon`, `decinveston` & `novonoon` sont vides & ne seront pas utiliser dans la suite de l'analyse. 
 
 
 # Description de la population
+
+:::{.callout-warning}
+## Attention !
+
+- Dans les tableaux, pour les variables en Oui/non, seul les résultats pour les `Oui` sont présentés.
+
+- Dans les figures comportant des dosages, les axes sont le plus souvent logarithmique.
+:::
+
+
 
 L'échantillon comporte `r nrow(demog)` cas. 
 
@@ -113,7 +224,7 @@ L'échantillon comporte `r nrow(demog)` cas.
 
 tt |> 
   dplyr::select(scanonston) |> 
-  tbl_summary() |> 
+  tbl_summary( statistic = stt,             value = ouinon) |> 
   modify_header(label ~ " ") |>
 bold_labels() |>
 pexptabph(nomfich = classeur,
@@ -121,6 +232,7 @@ nomsheet = "sca",
 exp = expx)
 ```
 
+Le faible nombre de patients positif pour le SCA ST- fragilise l'échantillon &, en particulier, oblige à utiliser des tests non paramétriques car il est impossible de faire une hypothèse de normalité sur un échantillon de 25 cas. 
 
 ## Démographie
 
@@ -133,12 +245,12 @@ tt |>
 dplyr::select(age:imc, scanonston) |>
 tbl_summary(missing = "no", 
 by = scanonston,
-            statistic = list(all_categorical() ~ "{n}/{N} ({p})")) |>
+  statistic = stt,             value = ouinon) |>
 modify_header(label ~ " ") |>
  modify_spanning_header(c("stat_1", "stat_2") ~ "**SCA ST-**") |>
 bold_labels() |>
   add_overall() |>
-  add_p() |>
+  add_p(test = ptest) |>
   bold_p() |> 
 pexptabph(nomfich = classeur,
 nomsheet = "demog1",
@@ -152,7 +264,7 @@ Les différences -- attendues -- entre les deux groupes seront à prendre en com
 #| label: fig-ages
 #| fig-cap: Pyramide des âges
 
-demog |>
+gg <- demog |>
     mutate(agerec = cut(age,
     breaks = c(20, 30, 40, 50, 60, 70, 80, 90, 100),
     labels = c("21-30", "31,40", "41-50", "51-60", "61-70", "71,80", "81-90", ">90")
@@ -175,6 +287,7 @@ theme_light() +
       legend.title = element_blank(),
       legend.position = "bottom")
 
+ggplotly(gg)
 ```
 
 
@@ -191,19 +304,17 @@ atcd |>
 dplyr::select(2:11,scanonston) |>
 tbl_summary(missing = "no", 
             by = scanonston,
-  #                      naisstermsa ~ "continuous"),
-            statistic = list(all_categorical() ~ "{n}/{N} ({p})")) |>
+             statistic = stt,
+            value = ouinon) |>
 modify_header(label ~ " ") |>
   modify_spanning_header(c("stat_1", "stat_2") ~ "**SCA ST-**") |>
 bold_labels() |>
 add_overall() |>
-add_p() |>
+add_p(test = ptest) |>
 bold_p() |> 
-as_kable_extra(longtable = FALSE, booktabs = TRUE) |>
-      kable_styling(latex_options = c("repeat_header"))
-# pexptabph(nomfich = classeur,
-# nomsheet = "atcd1",
-# exp = expx)
+ pexptabph(nomfich = classeur,
+ nomsheet = "atcd1",
+ exp = expx)
 ```
 
 ## Clinique
@@ -218,13 +329,12 @@ dplyr::select(douleur7on: autredoumon, scanonston) |>
 tbl_summary(missing = "no",
             by = scanonston,
 type = list(doulh0 ~ "continuous",
-            doulh3 ~ "continuous",
-            dyspneeon ~ "categorical"),
-            statistic = list(all_categorical() ~ "{n}/{N} ({p})")) |>
+            doulh3 ~ "continuous"),
+             statistic = stt,             value = ouinon) |>
 modify_header(label ~ " ") |>
 modify_spanning_header(c("stat_1", "stat_2") ~ "**SCA ST-**") |>
 add_overall() |>
-add_p() |>
+add_p(test = ptest) |>
 bold_labels() |>
 pexptabph(nomfich = classeur,
 nomsheet = "atcd1",
@@ -236,21 +346,15 @@ exp = expx)
 #| label: tbl-ttantalg
 #| tbl-cap: Traitements antalgiques reçus
 
-zz <- tt |>
-dplyr::select(antalgon:ainson,scanonston) |>
-mutate(ainson = factor(ainson, levels = c("no", "yes")),
-       paracetcodon = factor(paracetcodon, levels = c("no", "yes"))) 
-  var_label(zz$ainson) <- "AINS"
-  var_label(zz$paracetcodon) <- "Paracétamol + codéine"
-  
-zz |> 
+tt |> 
+  dplyr::select(antalgon:ainson,scanonston) |> 
   tbl_summary(missing = "no",
               by = scanonston,
-            statistic = list(all_categorical() ~ "{n}/{N} ({p})")) |>
+             statistic = stt,             value = ouinon) |>
 modify_header(label ~ " ") |>
 modify_spanning_header(c("stat_1", "stat_2") ~ "**SCA ST-**") |>
 bold_labels() |>
-    add_p() |>
+    add_p(test = ptest) |>
   bold_p() |> 
 bold_labels() |>
 pexptabph(nomfich = classeur,
@@ -263,14 +367,14 @@ exp = expx)
 #| tbl-cap: Délais
 
 tt |>
-  dplyr::select(sympt_urg:urg_h3, scanonston) |>
+  dplyr::select(sympt_urg:urg_h3,h0h3, scanonston) |>
   tbl_summary(
     missing = "no",
     by = scanonston,
-    statistic = list(all_categorical() ~ "{n}/{N} ({p})")
-  ) |>
+    statistic = stt) |>
+  add_overall() |>
   modify_header(label ~ " ") |>
-  add_p() |>
+  add_p(test = ptest) |>
   modify_spanning_header(c("stat_1", "stat_2") ~ "**SCA ST-**") |>
   bold_p() |>
   bold_labels() |>
@@ -281,7 +385,16 @@ tt |>
   )
 ```
 
+
 # Résultats biologiques
+
+:::{.callout-warning}
+## Attention !
+
+- Dans les tableaux, pour les variables en Oui/non, seul les résultats pour les `Oui` sont présentés.
+
+- Dans les figures comportant des dosages, les axes sont le plus souvent logarithmique.
+:::
 
 Description simple des divers taux de troponine & copeptine.
 
@@ -290,20 +403,25 @@ Description simple des divers taux de troponine & copeptine.
 #| tbl-cap: Marqueurs à H0 et H3
 
 tt |>
-dplyr::select(tropoh0,copepth0,tropoh3,scanonston) |>
-tbl_summary(missing = "no",
-            by = scanonston,
-            statistic = list(all_categorical() ~ "{n}/{N} ({p})")) |>
-modify_header(label ~ " ") |>
+  dplyr::select(tropoh0, copepth0, tropoh3, scanonston) |>
+  tbl_summary(
+    missing = "no",
+    by = scanonston,
+    statistic = stt,
+    value = ouinon
+  ) |>
+  modify_header(label ~ " ") |>
   modify_spanning_header(c("stat_1", "stat_2") ~ "**SCA ST-**") |>
-bold_labels() |>
-  add_overall() |> 
-        add_p() |>
-  add_n() |> 
-  bold_p() |> 
-pexptabph(nomfich = classeur,
-nomsheet = "biol",
-exp = expx)
+  bold_labels() |>
+  add_overall() |>
+  add_p(test = ptest) |>
+  add_n() |>
+  bold_p() |>
+  pexptabph(
+    nomfich = classeur,
+    nomsheet = "biol",
+    exp = expx
+  )
 ```
 
 ```{r}
@@ -313,11 +431,12 @@ exp = expx)
 tt |> 
   dplyr::select(tp0,cp0,tpcp0,scanonston) |> 
   tbl_summary(by = scanonston, 
+              statistic = stt,
               missing = "no", 
               percent = "row") |> 
 modify_spanning_header(c("stat_1", "stat_2") ~ "**SCA ST-**") |>
 bold_labels() |>
-  add_p() |> 
+  add_p(test = ptest) |> 
     add_overall() |> 
   bold_p() |> 
 pexptabph(nomfich = classeur,
@@ -330,7 +449,7 @@ exp = expx)
 #| label: fig-tropoh0
 #| fig-cap: Troponine à H0
 
-tt |> 
+gg <- tt |> 
 ggplot() +
 aes(x = tropoh0, fill = sex) +
 geom_density(alpha = 0.5) +
@@ -350,13 +469,15 @@ y = "n")+
       axis.title.y = element_text(size = 12),
       legend.title = element_blank(),
       legend.position = "bottom")
+
+plot(gg)
 ```
 
 ```{r}
 #| label: fig-cpt0
 #| fig-cap: Copeptine à H0
 
-tt |> 
+gg <- tt |> 
 ggplot() +
 aes(x = copepth0, fill = sex) +
 geom_density(alpha = 0.5) +
@@ -375,6 +496,9 @@ scale_fill_discrete_qualitative(palette = "Dark 3") +
       axis.title.y = element_text(size = 12),
       legend.title = element_blank(),
       legend.position = "bottom")
+
+
+plot(gg)
 ```
 
 ## Corrélation entre la copeptine et la troponine
@@ -386,7 +510,7 @@ scale_fill_discrete_qualitative(palette = "Dark 3") +
 zzc <- cor.test(tt$copepth0, tt$tropoh0, method = "spearman")
 zzc <- beaup(zzc[[3]], affp = 1)
 
-tt |>
+gg <- tt |>
 ggplot() +
 aes(x = copepth0, y = tropoh0, color = sex) +
 geom_jitter()+
@@ -408,6 +532,8 @@ y = "Troponine (pg/mL)") +
       legend.title = element_blank(),
       legend.position = "bottom")
 
+
+plot(gg)
 ```
 
 ```{r}
@@ -420,7 +546,7 @@ tt |>
   tbl_cross(tp0, cp0,percent = "cell",
             missing_text = "Inconnue") |> 
 bold_labels() |>
-  add_p() |> 
+  add_p(test = ptest) |> 
 pexptabph(nomfich = classeur,
 nomsheet = "ptcp2",
 exp = expx)
@@ -432,6 +558,14 @@ Il existe une bonne corrélation entre les deux indicateurs (`r zz`).
 # Critère principal
 
 **Le diagnostic de SCA ST- est porté sur une valeur supérieure à 5 fois la valeur seuil au 99<sup>e</sup> percentile ou une élévation prouvée des concentrations de troponine cardiaque, avec au moins une valeur supérieure au 99<sup>e</sup> percentile de la limite supérieure de référence associée à une augmentation ou diminution de la concentration de troponine sur les 2 dosages pour prouver le caractère aigu de cette élévation.**
+
+:::{.callout-warning}
+## Attention !
+
+- Dans les tableaux, pour les variables en Oui/non, seul les résultats pour les `Oui` sont présentés.
+
+- Dans les figures comportant des dosages, les axes sont le plus souvent logarithmique.
+:::
 
 Vu avec le laboratoire de l'hôpital pour la troponine les valeurs seuil au 99<sup>e</sup> percentile sont les suivantes : 
 
@@ -515,8 +649,8 @@ label = paste("AUC =", round(calc_auc(zz)$AUC, 2))
 
 ```{r}
 #| label: fig-roc_copeptine_tropo
-#| fig-cap: copeptine à H0 (selon la troponine)troponine H0 normale) - Courbe ROC
-#| fig-asp: 1
+#| fig-cap: copeptine à H0 (selon la troponine) - Courbe ROC
+#| fig-asp: 0.8
 
 
  zz <- tt |> 
@@ -552,20 +686,22 @@ tt |>
 annotate(
   "text",
   colour = "cyan3",
-  x = .75,
+  x = .70,
   y = .25,
   size = 5,
   label = paste("AUC (troponine normale) = ", aa1)) +
   annotate(
     "text",
     colour = "red",
-    x = .75,
+    x = .70,
     y = .15,
     size = 5,
     label = paste("AUC (troponine élevée) = ", aa2))
 ```
 
-Vu le faible nombre de cas dans chaque tranche de copeptine les intervalles de confiance (non représentés) sont énormes. La courbe des patients *troponine négative* semble intéressante mais ne porte que sur 8 cas.  
+Chez les patients à troponine élevée la copeptine ne semble pas apportée grand chose, en tout cas il est impossible de fixer un seuil. Par contre chez les patients à troponine normale l'AUC atteint des valeurs (juste) acceptables avec un seuil quelque part entre 8 & 18. À noter qu'un certain nombre de patients avait une troponine élevée pour d'autres raisons.
+
+
 
 ## Valeur du test
 
@@ -591,7 +727,9 @@ column_spec(1, bold = TRUE) |>
   footnote(general = "N = 91. Les valeurs sont données avec leur intervalle de confiance à 95 %.")
 ```
 
-Sur un test de première ligne comme celui-ci (un faux positif sera rapidement corrigé, un faux négatif renvoyé à la maison serait plus gênant) la **sensibilité** est le critère le plus important. Le gain via l'ajout de copeptine semble important.  Sur cet échantillon la sensibilité des tests est médiocre en soit mais la VPN est excellente sans grande différence entre les trois tests étudiés (troponine seule, copeptine seule & troponine + copeptine). Néanmoins la troponine seule est nettement meilleure que la copeptine seule comme le montre mles courbes ROC & les deux figures qui suivent.
+Sur un test de première ligne comme celui-ci (un faux positif sera rapidement corrigé, un faux négatif renvoyé à la maison serait plus gênant) la **sensibilité** est le critère le plus important ou, en prenant en compte la prévalence de la maladie, la Valeur Prédictive Négative *VPN*. Le gain via l'ajout de copeptine semble important. Mais on ne met pas en évidence de différence entre les trois tests, les intervalles de confiance se chevauchant franchement. 
+
+Sur cet échantillon la sensibilité des tests est médiocre en soit mais la VPN est excellente sans grande différence entre les trois tests étudiés (troponine seule, copeptine seule & troponine + copeptine). Néanmoins la troponine seule est nettement meilleure que la copeptine seule comme le montre les courbes ROC & les deux figures qui suivent.
 
 ```{r}
 #| label: fig-ssbtropo
@@ -651,7 +789,7 @@ y = "Troponine (pg/mL)") +
 
 ### Seuil optimal Copeptine
 
-Vu que le sueil proposé par le laboratoire de Tenon est dans l'intervalle de confiance de notre recherche d'un seuil idéal il n'y aura pas de différence entre le seuil *Tenon* & le notre. 
+Vu que le seuill proposé par le laboratoire de Tenon est dans l'intervalle de confiance de notre recherche d'un seuil idéal il n'y aura pas de différence entre le seuil *Tenon* & le notre. 
 
 
 
@@ -659,7 +797,7 @@ Vu que le sueil proposé par le laboratoire de Tenon est dans l'intervalle de co
 
 ### patient avec troponine normale
 
-On peut s'intéresser aux patients avec une troponine normale vu la @fig-roc_copeptine_tropo. Attention, le nombre de sujet est plus faible donc les conclusions sont à prendre avec précaution. De plus la différence avec l'échantillon global est peu importante (7 cas de moins) donc il est peu probable de mettre une différence en évidence. La courbe ROC, basée sur les taux de troponine & non une classification, est plus sensible.
+On peut s'intéresser aux patients avec une troponine normale vu la @fig-roc_copeptine_tropo. Attention, le nombre de sujet est plus faible donc les conclusions sont à prendre avec précaution. La courbe ROC, basée sur les taux de troponine & non une classification, est plus sensible.
 
 ```{r}
 #| label: tbl-tpn
@@ -685,7 +823,7 @@ rm(zz)
 ```{r}
 #| label: fig-tropon
 #| fig-cap: Patients avec troponine normale
-
+#| 
 tt |>
   filter(tp0 == "Normale") |>
   ggplot() +
@@ -719,11 +857,20 @@ tt |>
     axis.text.y = element_text(size = 12),
     legend.position = "none"
   )
+
 ```
 
 
 
 # Critères secondaires
+
+:::{.callout-warning}
+## Attention !
+
+- Dans les tableaux, pour les variables en Oui/non, seul les résultats pour les `Oui` sont présentés.
+
+- Dans les figures comportant des dosages, les axes sont le plus souvent logarithmique.
+:::
 
 ##Critère 1
 *Évaluation des performances de diagnostiques de l’association troponine / copeptine selon les facteurs de risque cardiovasculaire (âge, tabac, hypertension, antécédents ischémiques cardiaque, surpoids, hérédité)*
@@ -811,7 +958,7 @@ column_spec(1, bold = TRUE) |>
 tt |>
 tbl_continuous(variable = duree_urg, include = c(tp0, cp0,tpcp0)) |> 
 
-add_p() |> 
+add_p(test = ptest) |> 
 bold_labels() |> 
 pexptabph(nomfich = classeur,
 nomsheet = "dsej",
@@ -831,12 +978,12 @@ Le temps passé aux urgences ne semble pas lié aux résultats des divers marque
 aa <- NULL
 
 zz <- cor.test(tt$tropoh0,tt$doulprev)
-ll <- beaup(zz$p.value,affp= FALSE)
-aa <- rbind(aa, c("Troponine",round(zz[[4]],2),ll))
+llt <- beaup(zz$p.value,affp= FALSE)
+aa <- rbind(aa, c("Troponine",round(zz[[4]],2),llt))
 #
 zz <- cor.test(tt$copepth0,tt$doulprev)
-ll <- beaup(zz$p.value,affp= FALSE)
-aa <- rbind(aa, c("Copeptine",round(zz[[4]],2),ll))
+llc <- beaup(zz$p.value,affp= FALSE)
+aa <- rbind(aa, c("Copeptine",round(zz[[4]],2),llc))
 #
 zz <- as_tibble(aa)
 names(zz) <- c("Dosage à H0","r","p-value")
@@ -845,7 +992,77 @@ zz |>
       kable_styling(bootstrap_options = c("striped", "hover", "responsive")) 
 ```
 
-Le délai douleur-prélèvement ne semble influer sur les dosages de troponine ou de copeptine.
+Le délai douleur-prélèvement ne semble pas influer sur les dosages de troponine ou de copeptine.
+
+```{r}
+#| label: fig-delaitpcp
+#| fig-cap:  Troponine à H0 selon le délai entre 1superscript^e^ douleur et prélèvements
+
+tt |> 
+  ggplot() +
+  aes(x = doulprev, y = tropoh0) +
+  geom_point() +
+  scale_x_continuous(trans='log10') +
+  scale_y_continuous(trans='log10') +
+  geom_smooth(method  = "lm") +
+  labs(title = "Troponine à H0 selon le délai entre douleur et prélèvements",
+      subtitle = paste0(" p = ",llt),
+      x = "Délai entre 1e douleur et prélèvements (min)",
+      y = "Troponine H0",
+      caption = "",
+      fill = "") +
+  theme_light() +
+  scale_fill_jama() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.subtitle = element_text(size = 12),
+    axis.title.x = element_text(size = 12),
+    legend.title = element_text(size = 12),
+    axis.title.y = element_text(
+      size = 12,
+      angle = 90,
+      vjust = .5
+    ),
+  axis.text.x = element_text(size = 12),
+  axis.text.y = element_text(size = 12),
+  legend.position = "right"
+  )
+```
+
+```{r}
+#| label: fig-delaicop
+#| fig-cap:  Copeptine à H0 selon le délai entre 1superscript^e^ douleur et prélèvements
+
+tt |> 
+  ggplot() +
+  aes(x = doulprev, y = copepth0) +
+  geom_point() +
+  scale_x_continuous(trans='log10') +
+  scale_y_continuous(trans='log10') +
+  geom_smooth(method  = "lm") +
+  labs(title = "Copeptine à H0 selon le délai entre douleur et prélèvements",
+      subtitle = paste0(" p = ",llc),
+      x = "Délai entre 1e douleur et prélèvements (min)",
+      y = "Copeptine H0",
+      caption = "",
+      fill = "") +
+  theme_light() +
+  scale_fill_jama() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.subtitle = element_text(size = 12),
+    axis.title.x = element_text(size = 12),
+    legend.title = element_text(size = 12),
+    axis.title.y = element_text(
+      size = 12,
+      angle = 90,
+      vjust = .5
+    ),
+  axis.text.x = element_text(size = 12),
+  axis.text.y = element_text(size = 12),
+  legend.position = "right"
+  )
+```
 
 ## Critère 4
 *Évaluation de l’évolution de la douleur via l’échelle numérique entre l’arrivée aux urgences et la réévaluation à 3 heures*
@@ -891,5 +1108,5 @@ theme_light() +
       legend.position = "none")
 
 ```
-:::
 
+:::

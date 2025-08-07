@@ -82,8 +82,8 @@ importph <- function() {
     mutate(evah3dte = as.character(evah3dte)) |>
     mutate(sympt_urg = difdate(symptodte, symptohr, urgencdte, urgenhr)) |>
     mutate(urg_h3 = difdate(urgencdte, urgenhr, evah3dte, evah3hr))
-  var_label(patho$sympt_urg) <- "Délai premiers symptômes/urgences"
-  var_label(patho$urg_h3) <- "Délai arrivée urgence/évaluation à h3"
+  var_label(patho$sympt_urg) <- "Délai premiers symptômes/urgences (min)"
+  var_label(patho$urg_h3) <- "Délai arrivée urgence/évaluation à h3 (min)"
 
   tt2 <- left_join(tt1, patho, by = "subjid")
   # Résultats
@@ -96,16 +96,20 @@ importph <- function() {
       (tropoh0 > 34.2 & sex == "Masculin"),
     "Élevée", "Normale"
     )) |>
+    mutate(h0h3 = difdate(prelh0dte, prelh0hr, prelh3dte, prelh3hr)) |>
     mutate(cp0 = ifelse(copepth0 > 10, "Élevée", "Normale")) |>
     mutate(cp0 = as.factor(cp0)) |>
     mutate(tpcp0 = ifelse(tp0 == "Élevée" | cp0 == "Élevée", "Positif", "Négatif")) |>
     mutate(tpcp0 = as.factor(tpcp0)) |>
+    mutate(tp0 = as.factor(tp0)) |>
     mutate(tpcp0 = fct_relevel(tpcp0, "Positif", "Négatif"))
   #
   var_label(tt3$tp0) <- "Troponine h0"
   var_label(tt3$cp0) <- "Copeptine h0"
   var_label(tt3$tpcp0) <- "combinaison Troponine/Copeptine"
+  var_label(tt3$h0h3) <- "Délai Prélèvement H0 à Prélèvement H3 (min)"
   var_label(tt3$sca3) <- "Troponine H3"
+
   #
   # finet
 
@@ -121,12 +125,12 @@ importph <- function() {
         )
     ) |>
     mutate(duree_urg = difdate(urgencdte, urgenhr, sortiurgdte, sortiurghr)) |>
-    mutate(doulprev = difdate(tt$symptodte, tt$symptohr, tt$prelh0dte, tt$prelh0hr)) |>
-    mutate(ddoul = doulh3 - doulh0)
-  dplyr::select(-ends_with(c("dtex", "hrx")))
+    mutate(doulprev = difdate(symptodte, symptohr, prelh0dte, prelh0hr)) |>
+    mutate(ddoul = doulh3 - doulh0) |>
+    dplyr::select(-ends_with(c("dte", "hr")))
 
-  var_label(tt$duree_urg) <- "Temps passé aux urgences"
-  var_label(tt$doulprev) <- "Délai premiers smptômes/prélèvement"
+  var_label(tt$duree_urg) <- "Temps passé aux urgences (min)"
+  var_label(tt$doulprev) <- "Délai premiers symptômes/prélèvement (min)"
   var_label(tt$ddoul) <- "Évolution douleur H0-H3"
 
   #
