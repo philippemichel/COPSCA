@@ -1,8 +1,26 @@
 ---
 subtitle: "Rapport statistique V1.0"
-cache: false
+cache: true
 ---
 
+::: {.panel-tabset}
+
+# Introduction
+
+**Place du dosage copeptine - troponine dans le diagnostic d’élimination des SCA non ST+ dans la prise en charge des douleurs thoraciques non traumatiques en pré et intra hospitalier chez l’adulte.**
+
+Recherche non-interventionnelle impliquant la personne humaine
+
+:::{.callout-note appearance="simple"}
+**Responsable scientifique** : M<sup>me</sup> Marion DUPAIN
+
+**Investigateur coordonnateur** :  D<sup>r</sup> Olivier FANCELLI 
+Service d’Accueil des Urgences – NOVO (Site Pontoise)
+
+**Chef de projet** : M<sup>me</sup> Véronique DA COSTA
+
+**Data-manager** : M. Nathanaël CHARRIER
+:::
 
 ```{r}
 #| label: setup
@@ -13,7 +31,6 @@ library(baseph)
 library(janitor)
 library(tidyverse)
 library(gtsummary)
-library(readODS)
 library(ggcorrplot)
 library(kableExtra)
 library(lubridate)
@@ -28,9 +45,11 @@ library(plotly)
 library(ggsci)
 library(colorspace)
 library(apyramid)
+#library(plotly)
 library(plotROC)
 #
 theme_gtsummary_language(language = "fr", decimal.mark = ",")
+theme_gtsummary_journal(journal = "jama")
 options(OutDec = ",")
 ptest <- list(all_continuous() ~ "wilcox.test", all_categorical() ~ "chisq.test")
 stt <- list(
@@ -39,13 +58,9 @@ stt <- list(
 )
 #
 load("data/copsca.RData")
-classeur <- "copsca2.ods"
-expx <- TRUE
-if (expx) {
-  file.create(classeur)
-  file.remove(classeur)
-  write_ods(iris, classeur)
-}
+expx <- FALSE
+classeur <- "copsca2.xls"
+if (expx){system(paste0("rm -f ",classeur))}
 #
 oo <- "Oui"
 ouinon <- list(
@@ -109,7 +124,7 @@ npc <- function(x) {
 }
 ```
 
-# Qualité des données
+## Qualité des données
 
 ### Corrélations anormales
 
@@ -187,7 +202,7 @@ Les variables  `embolon`, `oppositon`, `decinveston` & `novonoon` sont vides (ou
 - Dans les figures comportant des dosages, les axes sont le plus souvent logarithmique.
 :::
 
-\bigskip
+
 
 L'échantillon comporte `r nrow(demog)` cas. 
 
@@ -199,8 +214,7 @@ L'échantillon comporte `r nrow(demog)` cas.
 
 tt |> 
   dplyr::select(scanonston) |> 
-  tbl_summary( statistic = stt,             
-               value = ouinon) |> 
+  tbl_summary( statistic = stt,             value = ouinon) |> 
   modify_header(label ~ " ") |>
 bold_labels() |>
 pexptabph(nomfich = classeur,
@@ -263,10 +277,10 @@ theme_light() +
       legend.title = element_blank(),
       legend.position = "bottom")
 
-plot(gg)
+ggplotly(gg)
 ```
 
-\clearpage
+
 
 ## Antécédents
 
@@ -290,11 +304,8 @@ add_p(test = ptest) |>
 bold_p() |> 
  pexptabph(nomfich = classeur,
  nomsheet = "atcd1",
- exp = expx, 
- lg = TRUE)
+ exp = expx)
 ```
-
-\newpage
 
 ## Clinique
 
@@ -320,7 +331,7 @@ tt |>
   add_p(test = ptest) |>
   bold_p() |>
   bold_labels() |>
-  gexptabph(
+  pexptabph(
     nomfich = classeur,
     nomsheet = "cliniq",
     exp = expx
@@ -348,8 +359,7 @@ tt |>
   pexptabph(
     nomfich = classeur,
     nomsheet = "antalg",
-    exp = expx, 
-    lg = TRUE
+    exp = expx
   )
 ```
 
@@ -370,7 +380,7 @@ tt |>
   modify_spanning_header(c("stat_1", "stat_2") ~ "**SCA ST-**") |>
   bold_p() |>
   bold_labels() |>
-  gexptabph(
+  pexptabph(
     nomfich = classeur,
     nomsheet = "delais",
     exp = expx
@@ -909,8 +919,6 @@ if(expx){
 }
 ```
 
-\newpage
-
 ## Critère 2
 *Évaluation de la durée du séjour aux urgences du patient.*
 
@@ -926,7 +934,7 @@ bold_p() |>
 bold_labels() |> 
 pexptabph(nomfich = classeur,
 nomsheet = "dsej",
-exp = expx, lg = TRUE)
+exp = expx)
 ``` 
 
 Le temps passé aux urgences ne semble pas lié aux résultats des divers marqueurs. 
@@ -1072,3 +1080,5 @@ theme_light() +
       legend.position = "none")
 
 ```
+
+:::

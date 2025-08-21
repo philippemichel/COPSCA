@@ -1,0 +1,47 @@
+title: "COP-SCA"
+date: today
+date-format: "DD MMMM YYYY"
+lang: fr
+language:
+  title-block-author-single: "Auteur"
+author:
+  - name: "D<sup>r</sup> Philippe MICHEL"
+    orcid: "0000-0003-2392-7186"
+    email: "philippe.michel@ght-novo.fr"
+    role: "Statisticien"
+    affiliations:
+      name: "USRC - Hôpital NOVO"
+      city: Pontoise
+      department: "Unité de Soutien à la Recherche Clinique"
+
+title-block-banner: "#26474a"
+title-block-banner-color: white
+format:
+  html:
+    appendix-style: default
+    embed-resources: true
+    theme: flatly
+    code-fold: true
+    code-line-numbers: true
+    html-math-method: katex
+    highlight-style: ayu
+    page-layout: full
+    toc: true
+    number-sections: true
+    smooth-scroll: true
+    citation-hover: true
+bibliography: stat.bib
+csl: jama.csl
+license: "CC BY-SA"
+warning: false
+message: false
+cache: true
+website:
+  title: "COPSCA"
+  sidebar:
+   style: "docked"
+   search: true
+   contents:
+     - text: "AA"
+     - contents: auto
+
