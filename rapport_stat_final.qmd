@@ -1,5 +1,5 @@
 ---
-subtitle: "Rapport statistique V1.0"
+subtitle: "Rapport statistique V2.0"
 cache: false
 ---
 
@@ -189,7 +189,7 @@ Les variables  `embolon`, `oppositon`, `decinveston` & `novonoon` sont vides (ou
 
 \bigskip
 
-L'échantillon comporte `r nrow(demog)` cas. 
+L'échantillon comporte `r nrow(tt)` cas. 
 
 
 
@@ -222,12 +222,7 @@ dplyr::select(age:imc, scanonston) |>
 tbl_summary(missing = "no", 
 by = scanonston,
   statistic = stt,             value = ouinon) |>
-modify_header(label ~ " ") |>
- modify_spanning_header(c("stat_1", "stat_2") ~ "**SCA ST-**") |>
-bold_labels() |>
-  add_overall() |>
-  add_p(test = ptest) |>
-  bold_p() |> 
+tabph(nn = 2, nomv = "**SCA ST-**", normx = FALSE) |> 
 pexptabph(nomfich = classeur,
 nomsheet = "demog1",
 exp = expx) 
@@ -240,7 +235,7 @@ Les différences -- attendues -- entre les deux groupes seront à prendre en com
 #| label: fig-ages
 #| fig-cap: Pyramide des âges
 
-gg <- demog |>
+gg <- tt |>
     mutate(agerec = cut(age,
     breaks = c(20, 30, 40, 50, 60, 70, 80, 90, 100),
     labels = c("21-30", "31,40", "41-50", "51-60", "61-70", "71,80", "81-90", ">90")
@@ -274,20 +269,14 @@ plot(gg)
 #| label: tbl-atcd
 #| tbl-cap: Antécédents
 
-atcd |>
-    left_join(finet, by = "subjid") |> 
+tt |>
   drop_na(scanonston) |>
 dplyr::select(2:11,scanonston) |>
 tbl_summary(missing = "no", 
             by = scanonston,
              statistic = stt,
             value = ouinon) |>
-modify_header(label ~ " ") |>
-  modify_spanning_header(c("stat_1", "stat_2") ~ "**SCA ST-**") |>
-bold_labels() |>
-add_overall() |>
-add_p(test = ptest) |>
-bold_p() |> 
+tabph(nn = 2, nomv = "**SCA ST-**", normx = FALSE) |> 
  pexptabph(nomfich = classeur,
  nomsheet = "atcd1",
  exp = expx, 
@@ -314,12 +303,7 @@ tt |>
     ),
     statistic = stt, value = ouinon
   ) |>
-  modify_header(label ~ " ") |>
-  modify_spanning_header(c("stat_1", "stat_2") ~ "**SCA ST-**") |>
-  add_overall() |>
-  add_p(test = ptest) |>
-  bold_p() |>
-  bold_labels() |>
+tabph(nn = 2, nomv = "**SCA ST-**", normx = FALSE) |> 
   gexptabph(
     nomfich = classeur,
     nomsheet = "cliniq",
@@ -327,6 +311,8 @@ tt |>
   )
 
 ```
+
+ 
 
 ```{r}
 #| label: tbl-ttantalg
@@ -339,12 +325,7 @@ tt |>
     by = scanonston,
     statistic = stt, value = ouinon
   ) |>
-  modify_header(label ~ " ") |>
-  modify_spanning_header(c("stat_1", "stat_2") ~ "**SCA ST-**") |>
-  bold_labels() |>
-  add_p(test = ptest) |>
-  bold_p() |>
-  bold_labels() |>
+tabph(nn = 2, nomv = "**SCA ST-**", normx = FALSE) |> 
   pexptabph(
     nomfich = classeur,
     nomsheet = "antalg",
@@ -364,12 +345,7 @@ tt |>
     by = scanonston,
     statistic = stt
   ) |>
-  add_overall() |>
-  modify_header(label ~ " ") |>
-  add_p(test = ptest) |>
-  modify_spanning_header(c("stat_1", "stat_2") ~ "**SCA ST-**") |>
-  bold_p() |>
-  bold_labels() |>
+tabph(nn = 2, nomv = "**SCA ST-**", normx = FALSE) |> 
   gexptabph(
     nomfich = classeur,
     nomsheet = "delais",
@@ -402,13 +378,7 @@ tt |>
     statistic = stt,
     value = ouinon
   ) |>
-  modify_header(label ~ " ") |>
-  modify_spanning_header(c("stat_1", "stat_2") ~ "**SCA ST-**") |>
-  bold_labels() |>
-  add_overall() |>
-  add_p(test = ptest) |>
-  add_n() |>
-  bold_p() |>
+tabph(nn = 2, nomv = "**SCA ST-**", normx = FALSE) |> 
   pexptabph(
     nomfich = classeur,
     nomsheet = "biol",
@@ -426,11 +396,7 @@ tt |>
               statistic = stt,
               missing = "no", 
               percent = "row") |> 
-modify_spanning_header(c("stat_1", "stat_2") ~ "**SCA ST-**") |>
-bold_labels() |>
-  add_p(test = ptest) |> 
-    add_overall() |> 
-  bold_p() |> 
+tabph(nn = 2, nomv = "**SCA ST-**", normx = FALSE) |> 
 pexptabph(nomfich = classeur,
 nomsheet = "tpcpt",
 exp = expx)
@@ -485,7 +451,7 @@ tt |>
   tbl_cross(tp0, cp0,percent = "cell",
             missing_text = "Inconnue") |> 
 bold_labels() |>
-  add_p(test = ptest) |> 
+  add_p(test = "wilcox.test") |> 
   bold_p() |> 
 pexptabph(nomfich = classeur,
 nomsheet = "ptcp2",
@@ -580,10 +546,10 @@ zz +
 geom_rocci(fill = "pink") +
 annotate(
 "text",
-x = .75,
+x = .65,
 y = .25,
 size = 6,
-label = paste("AUC =", round(calc_auc(zz)$AUC, 2))
+label = paste0("AUC =", round(calc_auc(zz)$AUC, 2))
 )
 ```
 
@@ -626,20 +592,118 @@ tt |>
 annotate(
   "text",
   colour = "cyan3",
-  x = .70,
+  x = .65,
   y = .25,
-  size = 5,
+  size = 4,
   label = paste("AUC (troponine normale) = ", aa1)) +
   annotate(
     "text",
     colour = "red",
-    x = .70,
+    x = .60,
     y = .15,
-    size = 5,
+    size = 4,
     label = paste("AUC (troponine élevée) = ", aa2))
 ```
 
 Chez les patients à troponine élevée la copeptine ne semble pas apportée grand chose, en tout cas il est impossible de fixer un seuil. Par contre chez les patients à troponine normale l'AUC atteint des valeurs (juste) acceptables avec un seuil quelque part entre 8 & 18 pg/mL. À noter que pour certains patients le dosage élevé de copeptine pouvait avoir une autre explication.
+
+### Patients sans pathologie confondante
+
+On exclu dans ces figures trois patients ayant une pathologie connue pour élever le taux de copeptine.
+
+```{r}
+#| label: prep-cp_propre
+
+ttn <- tt |> 
+  dplyr::filter(! subjid %in% c("01-024-CM", "01-159-SC", "01-167-LJ"))
+```
+
+
+```{r}
+#| label: fig-roc_cpt-propre
+#| fig-cap: Copeptine à H0 - Courbe ROC
+#| fig-asp: 1
+
+zz <- ttn |>
+mutate(scanonston = ifelse(scanonston == "Oui", 1, 0)) |>
+ggplot() +
+aes(d = scanonston, m = copepth0) +
+geom_roc() +
+style_roc(guide = TRUE, theme = theme_light) +
+geom_abline(aes(intercept = 0, slope  = 1), linetype = 2, color = "grey50") +
+labs(title = "Copeptine H0", 
+     x = " 1 - sensibilité", 
+     y = "Spécificité") +
+theme(plot.title = element_text(size = 16, face = "bold"),
+axis.title.x = element_text(size = 12),
+axis.title.y = element_text(size = 12))
+
+
+zz +
+geom_rocci(fill = "pink") +
+annotate(
+"text",
+x = .75,
+y = .25,
+size = 6,
+label = paste("AUC =", round(calc_auc(zz)$AUC, 2))
+)
+```
+
+
+```{r}
+#| label: fig-roc_copeptine_tropo-propre
+#| fig-cap: copeptine à H0 (selon la troponine) - Courbe ROC
+#| fig-asp: 0.8
+
+
+ zz <- ttn |> 
+   dplyr::filter(tp0 == "Normale") |>
+   ggplot() +
+   aes(d = scanonston, m = copepth0, color = tp0) +
+   geom_roc() 
+   aa <- calc_auc(zz)
+   aa1 <- round(aa$AUC,2)
+   zz <- tt |> 
+     dplyr::filter(tp0 == "Élevée") |>
+     ggplot() +
+     aes(d = scanonston, m = copepth0, color = tp0) +
+     geom_roc() 
+   aa <- calc_auc(zz)
+   aa2 <- round(aa$AUC,2)
+#
+tt |>
+  mutate(scanonston = ifelse(scanonston == "Oui", 1, 0)) |> 
+  ggplot() +
+  aes(d = scanonston, m = copepth0, color = tp0) +
+  geom_roc() +
+  style_roc(guide = TRUE, theme = theme_light,
+            xlab = "1 - Sensibilité",
+            ylab = "Spécificité",
+            ) +
+  geom_abline(aes(intercept = 0, slope  = 1), linetype = 2, color = "grey50") +
+  labs(title = "Copeptine H0",
+       color = "Troponine H0") +
+  theme(plot.title = element_text(size = 16, face = "bold"),
+        axis.title.x = element_text(size = 12),
+        axis.title.y = element_text(size = 12)) +
+annotate(
+  "text",
+  colour = "cyan3",
+  x = .65,
+  y = .25,
+  size = 4,
+  label = paste("AUC (troponine normale) = ", aa1)) +
+  annotate(
+    "text",
+    colour = "red",
+    x = .60,
+    y = .15,
+    size = 4,
+    label = paste("AUC (troponine élevée) = ", aa2))
+```
+
+Pas de modification majeure des résultats en excluant trois patients ayant une autre cuase possible d'élévation de la copeptine. 
 
 
 ## Valeur du test
@@ -918,18 +982,25 @@ if(expx){
 #| label: tbl-crti2
 #| tbl-cap: Évaluation de la durée du séjour aux urgences
 tt |>
-tbl_continuous(variable = duree_urg, include = c(tp0, cp0,tpcp0)) |> 
+  mutate(tot = 1) |>
+  tbl_continuous(
+    variable = duree_urg, include = c(tot, tp0, cp0, tpcp0),
+    value = tot ~ 1,
+    label = list(tot = "Total")
+  ) |>
   modify_header(label ~ "Durée du séjour aux urgences (min)") |>
-bold_labels() |>
-add_p() |> 
-bold_p() |> 
-bold_labels() |> 
-pexptabph(nomfich = classeur,
-nomsheet = "dsej",
-exp = expx, lg = TRUE)
+  bold_labels() |>
+  add_p() |> 
+  bold_p() |>
+  bold_labels() |>
+  pexptabph(
+    nomfich = classeur,
+    nomsheet = "dsej",
+    exp = expx, lg = TRUE
+  )
 ``` 
 
-Le temps passé aux urgences ne semble pas lié aux résultats des divers marqueurs. 
+La durée de séjour aux urgences est de Le temps passé aux urgences ne semble pas lié aux résultats des divers marqueurs. 
 
 ## Critère 3
 *Évolution de l’association des dosages en fonction du délai entre 1ère douleur et prélèvements.*
@@ -939,28 +1010,38 @@ Le temps passé aux urgences ne semble pas lié aux résultats des divers marque
 #| tbl-cap: Dosage vs délai douleur-prélèvement
 #| eval: true
 
-aa <- NULL
-
 zz <- cor.test(tt$tropoh0,tt$doulprev)
 llt <- beaup(zz$p.value,affp= FALSE)
-aa <- rbind(aa, c("Troponine",round(zz[[4]],2),llt))
+
 #
 zz <- cor.test(tt$copepth0,tt$doulprev)
 llc <- beaup(zz$p.value,affp= FALSE)
-aa <- rbind(aa, c("Copeptine",round(zz[[4]],2),llc))
 #
-zz <- as_tibble(aa)
-names(zz) <- c("Dosage à H0","r","p-value")
-zz |> 
-   kbl(longtable = TRUE, booktabs = TRUE) |>
-      kable_styling(bootstrap_options = c("striped", "hover", "responsive")) 
+tt |>
+  mutate(tot = 1) |>
+  tbl_continuous(
+    variable = duree_urg, include = c(tot, tp0, cp0, tpcp0),
+    value = tot ~ 1,
+    label = list(tot = "Total")
+  ) |>
+  modify_header(label ~ "Durée du séjour aux urgences (min)") |>
+  bold_labels() |>
+  add_p() |>
+  bold_p() |>
+  bold_labels() |>
+  pexptabph(
+    nomfich = classeur,
+    nomsheet = "dprev",
+    exp = expx, lg = TRUE
+  )
+
 ```
 
 Le délai douleur-prélèvement ne semble pas influer sur les dosages de troponine ou de copeptine.
 
 ```{r}
 #| label: fig-delaitpcp
-#| fig-cap:  Troponine à H0 selon le délai entre 1superscript^e^ douleur et prélèvements
+#| fig-cap:  Troponine à H0 selon le délai entre douleur et prélèvements
 
 tt |> 
   ggplot() +
@@ -969,7 +1050,7 @@ tt |>
   scale_x_continuous(trans='log10') +
   scale_y_continuous(trans='log10') +
   geom_smooth(method  = "lm") +
-  labs(title = "Troponine à H0 selon le délai entre douleur et prélèvements",
+  labs(title = "Troponine à H0 selon le délai\n entre douleur et prélèvements",
       subtitle = paste0(" p = ",llt),
       x = "Délai entre 1e douleur et prélèvements (min)",
       y = "Troponine H0",
@@ -995,7 +1076,7 @@ tt |>
 
 ```{r}
 #| label: fig-delaicop
-#| fig-cap:  Copeptine à H0 selon le délai entre 1superscript^e^ douleur et prélèvements
+#| fig-cap:  Copeptine à H0 selon le délai entre douleur et prélèvements
 
 tt |> 
   ggplot() +
@@ -1004,7 +1085,7 @@ tt |>
   scale_x_continuous(trans='log10') +
   scale_y_continuous(trans='log10') +
   geom_smooth(method  = "lm") +
-  labs(title = "Copeptine à H0 selon le délai entre douleur et prélèvements",
+  labs(title = "Copeptine à H0 selon le délai\n entre douleur et prélèvements",
       subtitle = paste0(" p = ",llc),
       x = "Délai entre 1e douleur et prélèvements (min)",
       y = "Copeptine H0",
@@ -1037,12 +1118,10 @@ tt |>
 #| eval: true
 
 tt |> 
-dplyr::select(doulh0, doulh3, ddoul) |>
-tbl_summary(missing = "no", 
+dplyr::select(doulh0, doulh3, ddoul,scanonston) |>
+tbl_summary(by = scanonston, missing = "no", 
 type=list(doulh3~"continuous")) |>
-add_n() |>
-bold_labels() |> 
- modify_header(label ~ "") |> 
+tabph(nn = 2, nomv = "**SCA ST-**", normx = FALSE) |> 
 pexptabph(nomfich = classeur,
 nomsheet = "douleur",
 exp = expx)
@@ -1053,7 +1132,7 @@ exp = expx)
 #| fig-cap: Évolution de la douleur
 
 tt |> 
-dplyr::select(subjid, doulh0, doulh3) |> 
+dplyr::select(subjid, doulh0, doulh3,scanonston) |> 
 pivot_longer(cols = c(doulh0, doulh3), names_to = "heure", values_to = "douleur") |> 
 mutate(heure = factor(heure, labels = c("H0", "H3"))) |>
 ggplot() +
@@ -1072,3 +1151,30 @@ theme_light() +
       legend.position = "none")
 
 ```
+```{r}
+#| label: fig-douleur2
+#| fig-cap: Évolution de la douleur selon la présence d'un SCA ST-
+
+tt |> 
+dplyr::select(subjid, doulh0, doulh3,scanonston) |> 
+pivot_longer(cols = c(doulh0, doulh3), names_to = "heure", values_to = "douleur") |> 
+mutate(heure = factor(heure, labels = c("H0", "H3"))) |>
+ggplot() +
+aes(x = heure, y = douleur, fill = heure) +
+geom_violin() +
+geom_boxplot(width = 0.1, fill ="grey90") +
+facet_grid(row = vars(scanonston)) +
+theme_light() +
+ scale_fill_discrete_qualitative(palette = "Dark 3") +
+    labs(title = "Évolution de la douleur \nselon la présence d'un SCA ST-") +
+    theme(
+      plot.title = element_text(size = 16, face = "bold"),
+      plot.subtitle = element_text(size = 12),
+      axis.title.x = element_text(size = 12),
+      axis.title.y = element_text(size = 12),
+      legend.title = element_text(size = 12),
+      legend.position = "none")
+
+```
+
+Les patients non SCA ST- ont une douleur nulle à H3.

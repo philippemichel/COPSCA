@@ -133,6 +133,11 @@ importph <- function() {
   var_label(tt$doulprev) <- "Délai premiers symptômes/prélèvement (min)"
   var_label(tt$ddoul) <- "Évolution douleur H0-H3"
 
+  exclus <- c("01-025-MB", "01-188-FD", "01-033-LM", "01-051-NG", "02-153-CM", "02-160-AD", "02-217-KS", "02-152-FE", "02-154-SA", "01-049-BK")
+  tt <- tt |>
+    dplyr::filter(!subjid %in% exclus)
+
+
   #
   save(atcd, demog, finet, patho, tt, file = "data/copsca.RData")
 }

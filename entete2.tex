@@ -1,0 +1,27 @@
+    \definecolor{novo}{HTML}{27484b}
+    \usepackage[locale = FR, 
+                per-mode = symbol, 
+                range-phrase = { à },
+                range-units = single]{siunitx}
+    \usepackage[section]{placeins}
+    \usepackage{arsenal}
+    \usepackage{hyperref}
+    \usepackage{tcolorbox}
+    \usepackage[nonumberlist, 
+                automake,
+                style=treegroup]{glossaries-extra}
+    %\usepackage{glossaries-babel}
+    \setabbreviationstyle{long-short-sc}
+    \loadglsentries{listacro}
+    \makeglossaries
+   % \usepackage{luahyphenrules}
+   % \let\PEx\pointexclamation
+    \newcommand{\doc}{D\textsuperscript{r} }
+    \newcommand{\mme}{M\textsuperscript{me} }
+    %
+    \tcbset{colback=novo!5!white,colframe=novo!75!black}
+
+\newtcbox{\boxphm}{colback=novo!5!white, 
+                       width = 5cm,
+                       %text width=0.9\linewidth,
+                       halign = justify}

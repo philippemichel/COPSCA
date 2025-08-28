@@ -1,0 +1,9 @@
+\HyphenRules{french} % pour les césures en français
+% for french guillemets under utf8
+\catcode`« \active
+\catcode`» \active
+\def«{\guillemotleft }
+\def»{\guillemotright}
+% make hyphenation possible in presence of ’
+\lccode`\'=8217\lccode8217=8217
+% fin guillemets
