@@ -40,8 +40,8 @@ fig-cap-location: bottom
 tbl-cap-location: top
 papersize: a4
 editor: source
-bibliography: stat.bib
-cite-method: biblatex
+#bibliography: stat.bib
+# cite-method: biblatex
 csl: jama.csl
 #reference-location: margin
 #citation-location: margin

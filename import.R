@@ -126,13 +126,14 @@ importph <- function() {
     ) |>
     mutate(duree_urg = difdate(urgencdte, urgenhr, sortiurgdte, sortiurghr)) |>
     mutate(doulprev = difdate(symptodte, symptohr, prelh0dte, prelh0hr)) |>
+    mutate(adm_h0 = difdate(urgencdte, urgenhr, prelh0dte, prelh0hr)) |>
     mutate(ddoul = doulh3 - doulh0) |>
     dplyr::select(-ends_with(c("dte", "hr")))
 
   var_label(tt$duree_urg) <- "Temps passé aux urgences (min)"
   var_label(tt$doulprev) <- "Délai premiers symptômes/prélèvement (min)"
   var_label(tt$ddoul) <- "Évolution douleur H0-H3"
-
+  var_label(tt$adm_h0) <- "Délai arrivée urgence/prélèvement H0 (min)"
   exclus <- c("01-025-MB", "01-188-FD", "01-033-LM", "01-051-NG", "02-153-CM", "02-160-AD", "02-217-KS", "02-152-FE", "02-154-SA", "01-049-BK")
   tt <- tt |>
     dplyr::filter(!subjid %in% exclus)

@@ -73,3 +73,7 @@ graphiques.zip
 rapport_stat_final.tex~
 rapport_stat_final.synctex(busy)
 test.R
+#rapport_stat_final.qmd#
+AVOIR
+
+**/*.quarto_ipynb

@@ -1,5 +1,5 @@
 ---
-subtitle: "Rapport statistique V2.0"
+subtitle: "Rapport statistique V2.1"
 cache: false
 ---
 
@@ -39,7 +39,7 @@ stt <- list(
 )
 #
 load("data/copsca.RData")
-classeur <- "copsca2.ods"
+classeur <- "copsca3.ods"
 expx <- TRUE
 if (expx) {
   file.create(classeur)
@@ -271,7 +271,7 @@ plot(gg)
 
 tt |>
   drop_na(scanonston) |>
-dplyr::select(2:11,scanonston) |>
+dplyr::select(htaon:tabacpa,scanonston) |>
 tbl_summary(missing = "no", 
             by = scanonston,
              statistic = stt,
@@ -339,7 +339,7 @@ tabph(nn = 2, nomv = "**SCA ST-**", normx = FALSE) |>
 #| tbl-cap: Délais
 
 tt |>
-  dplyr::select(sympt_urg:urg_h3, h0h3, scanonston) |>
+  dplyr::select(sympt_urg:urg_h3,adm_h0, h0h3, scanonston) |>
   tbl_summary(
     missing = "no",
     by = scanonston,
@@ -402,7 +402,10 @@ nomsheet = "tpcpt",
 exp = expx)
 ```
 
+Les seuils retenus sont :
 
+- Pour la trononine : supérieur à 15,6 pg/mL pour les femmes & supérieur à 34,2 pg/mL pour les hommes
+- Pour la copeptine : supérieur à 10 pg/mL pour les deux sexes
 
 ## Corrélation entre la copeptine et la troponine
 
@@ -1122,7 +1125,7 @@ dplyr::select(doulh0, doulh3, ddoul,scanonston) |>
 tbl_summary(by = scanonston, missing = "no", 
 type=list(doulh3~"continuous")) |>
 tabph(nn = 2, nomv = "**SCA ST-**", normx = FALSE) |> 
-pexptabph(nomfich = classeur,
+gexptabph(nomfich = classeur,
 nomsheet = "douleur",
 exp = expx)
 ```
